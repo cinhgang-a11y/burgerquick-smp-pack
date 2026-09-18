@@ -53,13 +53,17 @@ RAMPS = {
 
 # item id -> (vanilla texture, ramp, model parent)
 HANDHELD = "minecraft:item/handheld"
+MACE = "minecraft:item/handheld_mace"
 FLAT = "minecraft:item/generated"
+
+# Items rendered bigger in hand / on the ground (1.0 = vanilla size).
+SCALE = {"earthquake_mace": 2.0, "worldbreaker": 2.0}
 ITEMS = {
     "thunder_hammer": ("netherite_axe", "thunder", HANDHELD),
     "frost_blade": ("diamond_sword", "frost", HANDHELD),
     "inferno_staff": ("blaze_rod", "inferno", HANDHELD),
     "shadow_katana": ("netherite_sword", "shadow", HANDHELD),
-    "earthquake_mace": ("mace", "earth", HANDHELD),
+    "earthquake_mace": ("mace", "earth", MACE),
     "vampire_dagger": ("iron_sword", "blood", HANDHELD),
     "explosive_bow": ("bow", "boom", FLAT),
     "storm_bow": ("bow", "storm", FLAT),
@@ -70,7 +74,7 @@ ITEMS = {
     "hermes_boots": ("diamond_boots", "hermes", FLAT),
     "berserker_chestplate": ("netherite_chestplate", "berserk", FLAT),
     "titan_apple": ("golden_apple", "titan", FLAT),
-    "worldbreaker": ("mace", "mythic", HANDHELD),
+    "worldbreaker": ("mace", "mythic", MACE),
     "excavator": ("diamond_pickaxe", "steel", HANDHELD),
     "smelter_pickaxe": ("diamond_pickaxe", "smelter", HANDHELD),
     "orbital_strike_cannon": ("spyglass", "orbital", HANDHELD),
@@ -111,6 +115,36 @@ def recolour(img, ramp):
     return out
 
 
+def resolve_display(jar, model):
+    """Collects the display transforms a vanilla model inherits, nearest parent wins."""
+    display = {}
+    seen = set()
+    while model and model not in seen:
+        seen.add(model)
+        path = "assets/minecraft/models/" + model.split(":")[-1] + ".json"
+        try:
+            data = json.loads(jar.read(path))
+        except KeyError:
+            break
+        for slot, transform in data.get("display", {}).items():
+            display.setdefault(slot, transform)
+        model = data.get("parent")
+    return display
+
+
+def scaled_display(jar, parent, factor):
+    """Same placement as vanilla, just bigger. The GUI icon is left alone so it fits its slot."""
+    out = {}
+    for slot, transform in resolve_display(jar, parent).items():
+        if slot in ("gui", "head", "fixed"):
+            continue
+        scale = transform.get("scale", [1, 1, 1])
+        copy = dict(transform)
+        copy["scale"] = [round(v * factor, 3) for v in scale]
+        out[slot] = copy
+    return out
+
+
 def main():
     jar = zipfile.ZipFile(CLIENT_JAR)
 
@@ -131,8 +165,10 @@ def main():
         img.save(os.path.join(tex_dir, item_id + ".png"))
         sheet.paste(img, ((i % 7) * 16, (i // 7) * 16), img)
 
-        write(os.path.join(model_dir, item_id + ".json"),
-              {"parent": parent, "textures": {"layer0": f"{NS}:item/{item_id}"}})
+        model = {"parent": parent, "textures": {"layer0": f"{NS}:item/{item_id}"}}
+        if item_id in SCALE:
+            model["display"] = scaled_display(jar, parent, SCALE[item_id])
+        write(os.path.join(model_dir, item_id + ".json"), model)
         write(os.path.join(item_dir, item_id + ".json"),
               {"model": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}})
 
