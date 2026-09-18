@@ -57,7 +57,7 @@ MACE = "minecraft:item/handheld_mace"
 FLAT = "minecraft:item/generated"
 
 # Items rendered bigger in hand / on the ground (1.0 = vanilla size).
-SCALE = {"earthquake_mace": 2.0, "worldbreaker": 2.0}
+SCALE = {"earthquake_mace": 1.3, "worldbreaker": 1.3}
 ITEMS = {
     "thunder_hammer": ("netherite_axe", "thunder", HANDHELD),
     "frost_blade": ("diamond_sword", "frost", HANDHELD),
