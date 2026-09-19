@@ -105,10 +105,13 @@ def render_view(model, texture, yaw, pitch, size):
     return canvas
 
 
-def main(model_path, texture_path, out_path):
+def main(model_path, texture_path, out_path, scale=None, size=560):
+    global SCALE
+    if scale:
+        SCALE = float(scale)
     model = json.load(open(model_path, encoding="utf-8"))
     texture = Image.open(texture_path).convert("RGBA")
-    size = 560
+    size = int(size)
     views = [render_view(model, texture, yaw, pitch, size) for yaw, pitch in VIEWS]
     out = Image.new("RGBA", (size * len(views), size))
     for i, v in enumerate(views):
@@ -118,4 +121,4 @@ def main(model_path, texture_path, out_path):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:6])

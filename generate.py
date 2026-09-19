@@ -16,6 +16,7 @@ import zipfile
 
 from PIL import Image
 
+import boss_model
 import mace_model
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -327,6 +328,16 @@ def main():
         write(os.path.join(item_dir, item_id + ".json"), item_definition(item_id))
         if item_id in MODEL_3D:
             write_3d(item_id, tex_dir, model_dir)
+
+    # Ender Tyrant boss: five animated parts sharing one texture (shown by the BurgerBosses plugin).
+    boss_model.texture().save(os.path.join(tex_dir, "tyrant.png"))
+    for part in boss_model.PARTS:
+        write(os.path.join(model_dir, part + ".json"), {
+            "textures": {"main": f"{NS}:item/tyrant", "particle": f"{NS}:item/tyrant"},
+            "elements": boss_model.elements(part),
+        })
+        write(os.path.join(item_dir, part + ".json"),
+              {"model": {"type": "minecraft:model", "model": f"{NS}:item/{part}"}})
 
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {
