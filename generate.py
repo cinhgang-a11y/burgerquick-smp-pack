@@ -145,6 +145,142 @@ def scaled_display(jar, parent, factor):
     return out
 
 
+
+# ---------------------------------------------------------------------------------------------
+# 3D in-hand models. The inventory icon stays the flat recoloured sprite (like the vanilla
+# spyglass); only the version in your hand is 3D. Each model uses a small palette texture:
+# a 4x4 grid of 4x4-pixel colour cells.
+WOOD = [(92, 60, 32), (122, 84, 46), (150, 108, 62), (60, 38, 20)]
+GRIP = [(40, 32, 30), (58, 46, 42), (74, 60, 54), (28, 22, 20)]
+METAL = [(70, 74, 82), (110, 116, 126), (160, 166, 176), (46, 48, 54)]
+
+MODEL_3D = {
+    # item id: (shape, head ramp, accent ramp)
+    "worldbreaker": ("mace", "mythic", "thunder"),
+    "earthquake_mace": ("mace", "earth", "steel"),
+    "thunder_hammer": ("hammer", "thunder", "orbital"),
+    "orbital_strike_cannon": ("cannon", "orbital", "frost"),
+    "plasma_railgun": ("railgun", "plasma", "thunder"),
+}
+
+
+def palette_texture(head, accent):
+    """Row 0 wood, row 1 head shades, row 2 accent shades, row 3 grip/metal."""
+    rows = [WOOD, head[:4], accent[1:5], [GRIP[1], GRIP[2], METAL[1], METAL[2]]]
+    img = Image.new("RGBA", (16, 16))
+    px = img.load()
+    rnd = __import__("random").Random(7)
+    for cy, row in enumerate(rows):
+        for cx, c in enumerate(row):
+            for x in range(cx * 4, cx * 4 + 4):
+                for y in range(cy * 4, cy * 4 + 4):
+                    n = rnd.randint(-7, 7)
+                    px[x, y] = (max(0, min(255, c[0] + n)), max(0, min(255, c[1] + n)), max(0, min(255, c[2] + n)), 255)
+    return img
+
+
+def cell(cx, cy):
+    return [cx * 4, cy * 4, cx * 4 + 4, cy * 4 + 4]
+
+
+def box(frm, to, side, top=None):
+    """A cuboid using one palette cell on the sides and (optionally) a lighter one on top/bottom."""
+    top = top or side
+    faces = {f: {"uv": cell(*side), "texture": "#main"} for f in ("north", "south", "east", "west")}
+    faces["up"] = {"uv": cell(*top), "texture": "#main"}
+    faces["down"] = {"uv": cell(*side), "texture": "#main"}
+    return {"from": frm, "to": to, "faces": faces}
+
+
+WOOD_C, WOOD_D, GRIP_C, METAL_C, METAL_L = (1, 0), (0, 0), (0, 3), (2, 3), (3, 3)
+HEAD_D, HEAD_M, HEAD_L, HEAD_XL = (0, 1), (1, 1), (2, 1), (3, 1)
+ACC_M, ACC_L, ACC_XL = (1, 2), (2, 2), (3, 2)
+
+SHAPES = {
+    "mace": [
+        box([7.25, -2, 7.25], [8.75, 14, 8.75], WOOD_C, WOOD_D),
+        box([7, 1, 7], [9, 6, 9], GRIP_C),
+        box([6.75, -3.5, 6.75], [9.25, -2, 9.25], METAL_C, METAL_L),
+        box([6.5, 13, 6.5], [9.5, 14.5, 9.5], METAL_C, METAL_L),
+        box([4.5, 14.5, 4.5], [11.5, 21.5, 11.5], HEAD_M, HEAD_L),
+        box([5.5, 21.5, 5.5], [10.5, 22.5, 10.5], HEAD_L, HEAD_XL),
+        box([4.3, 17, 7], [11.7, 19, 9], ACC_L),               # glowing band
+        box([7, 17, 4.3], [9, 19, 11.7], ACC_L),
+        box([2.5, 16.5, 7.25], [4.5, 19.5, 8.75], HEAD_D, HEAD_M),  # side spikes
+        box([11.5, 16.5, 7.25], [13.5, 19.5, 8.75], HEAD_D, HEAD_M),
+        box([7.25, 16.5, 2.5], [8.75, 19.5, 4.5], HEAD_D, HEAD_M),
+        box([7.25, 16.5, 11.5], [8.75, 19.5, 13.5], HEAD_D, HEAD_M),
+        box([7.25, 22.5, 7.25], [8.75, 25, 8.75], ACC_M, ACC_XL),     # top spike
+    ],
+    "hammer": [
+        box([7.25, -3, 7.25], [8.75, 15, 8.75], WOOD_C, WOOD_D),
+        box([7, 0, 7], [9, 5, 9], GRIP_C),
+        box([6.75, -4, 6.75], [9.25, -3, 9.25], METAL_C, METAL_L),
+        box([2, 15, 5.5], [14, 21, 10.5], HEAD_M, HEAD_L),
+        box([1, 14.5, 5], [2, 21.5, 11], HEAD_D, HEAD_M),
+        box([14, 14.5, 5], [15, 21.5, 11], HEAD_D, HEAD_M),
+        box([7.5, 14.9, 5.4], [8.5, 21.1, 10.6], ACC_L, ACC_XL),     # lightning band
+        box([4, 21, 7], [12, 21.5, 9], HEAD_L, HEAD_XL),
+    ],
+    "cannon": [
+        box([6, 6, -8], [10, 10, 12], HEAD_M, HEAD_L),                # barrel
+        box([5.5, 5.5, -9], [10.5, 10.5, -7], HEAD_D, HEAD_M),       # muzzle ring
+        box([6.5, 6.5, -9.2], [9.5, 9.5, -9], ACC_XL),               # glowing muzzle
+        box([5, 5, 8], [11, 11, 15], HEAD_D, HEAD_M),                # breech
+        box([5.8, 5.8, -2], [10.2, 10.2, -1], ACC_L),                # energy rings
+        box([5.8, 5.8, 3], [10.2, 10.2, 4], ACC_L),
+        box([7, 10, 2], [9, 12, 7], METAL_C, METAL_L),               # scope
+        box([7.25, 12, 2.5], [8.75, 12.5, 6.5], ACC_M, ACC_XL),
+        box([7, 1, 9], [9, 5, 12], GRIP_C),                          # grip
+    ],
+    "railgun": [
+        box([6, 5, 3], [10, 10, 15], HEAD_D, HEAD_M),                # body
+        box([5.5, 7, -8], [7, 9, 8], HEAD_M, HEAD_L),                # left rail
+        box([9, 7, -8], [10.5, 9, 8], HEAD_M, HEAD_L),               # right rail
+        box([7.3, 7.5, -7], [8.7, 8.5, 4], ACC_XL),                  # plasma core
+        box([5, 6.5, -4], [11, 9.5, -3], ACC_L),                     # coils
+        box([5, 6.5, 0], [11, 9.5, 1], ACC_L),
+        box([7, 10, 6], [9, 11.5, 11], METAL_C, METAL_L),            # sight
+        box([7, 1, 10], [9, 5, 13], GRIP_C),                         # grip
+    ],
+}
+
+# Held display: the model's own coordinates, nudged into the hand like the vanilla spyglass.
+HELD_DISPLAY = {
+    "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, -2, 0], "scale": [1, 1, 1]},
+    "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, -2, 0], "scale": [1, 1, 1]},
+    "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
+    "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
+}
+
+
+def write_3d(item_id, tex_dir, model_dir):
+    shape, head, accent = MODEL_3D[item_id]
+    palette_texture(RAMPS[head], RAMPS[accent]).save(os.path.join(tex_dir, item_id + "_3d.png"))
+    display = json.loads(json.dumps(HELD_DISPLAY))
+    factor = SCALE.get(item_id, 1.0)
+    for transform in display.values():
+        transform["scale"] = [round(v * factor, 3) for v in transform["scale"]]
+    write(os.path.join(model_dir, item_id + "_3d.json"), {
+        "textures": {"main": f"{NS}:item/{item_id}_3d", "particle": f"{NS}:item/{item_id}"},
+        "gui_light": "front",
+        "display": display,
+        "elements": SHAPES[shape],
+    })
+
+
+def item_definition(item_id):
+    flat = {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}
+    if item_id not in MODEL_3D:
+        return {"model": flat}
+    return {"model": {
+        "type": "minecraft:select",
+        "property": "minecraft:display_context",
+        "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"], "model": flat}],
+        "fallback": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}_3d"},
+    }}
+
+
 def main():
     jar = zipfile.ZipFile(CLIENT_JAR)
 
@@ -169,8 +305,9 @@ def main():
         if item_id in SCALE:
             model["display"] = scaled_display(jar, parent, SCALE[item_id])
         write(os.path.join(model_dir, item_id + ".json"), model)
-        write(os.path.join(item_dir, item_id + ".json"),
-              {"model": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}})
+        write(os.path.join(item_dir, item_id + ".json"), item_definition(item_id))
+        if item_id in MODEL_3D:
+            write_3d(item_id, tex_dir, model_dir)
 
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {
