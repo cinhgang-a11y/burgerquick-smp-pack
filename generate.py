@@ -256,6 +256,13 @@ HELD_DISPLAY = {
 }
 
 
+# How far (in 1/16 block) to raise each shape in the hand.
+GRIP_SHIFT = {
+    "mace": {"thirdperson_righthand": 6, "thirdperson_lefthand": 6,
+             "firstperson_righthand": 5, "firstperson_lefthand": 5},
+}
+
+
 def write_3d(item_id, tex_dir, model_dir):
     shape, head, accent = MODEL_3D[item_id]
     if shape == "mace":
@@ -265,6 +272,11 @@ def write_3d(item_id, tex_dir, model_dir):
         palette_texture(RAMPS[head], RAMPS[accent]).save(os.path.join(tex_dir, item_id + "_3d.png"))
         elements = SHAPES[shape]
     display = json.loads(json.dumps(HELD_DISPLAY))
+    # Maces: slide the model up so the hand grips the bottom of the handle, not just under the head.
+    grip = GRIP_SHIFT.get(shape)
+    if grip:
+        for slot, lift in grip.items():
+            display[slot]["translation"][1] += lift
     factor = SCALE.get(item_id, 1.0)
     for transform in display.values():
         transform["scale"] = [round(v * factor, 3) for v in transform["scale"]]
