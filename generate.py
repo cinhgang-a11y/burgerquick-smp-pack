@@ -16,6 +16,8 @@ import zipfile
 
 from PIL import Image
 
+import mace_model
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 PACK = os.path.join(HERE, "BurgerQuickPack")
 CLIENT_JAR = r"C:\Users\Ville\AppData\Roaming\.minecraft\versions\26.2\26.2.jar"
@@ -256,7 +258,12 @@ HELD_DISPLAY = {
 
 def write_3d(item_id, tex_dir, model_dir):
     shape, head, accent = MODEL_3D[item_id]
-    palette_texture(RAMPS[head], RAMPS[accent]).save(os.path.join(tex_dir, item_id + "_3d.png"))
+    if shape == "mace":
+        mace_model.texture(item_id).save(os.path.join(tex_dir, item_id + "_3d.png"))
+        elements = mace_model.elements()
+    else:
+        palette_texture(RAMPS[head], RAMPS[accent]).save(os.path.join(tex_dir, item_id + "_3d.png"))
+        elements = SHAPES[shape]
     display = json.loads(json.dumps(HELD_DISPLAY))
     factor = SCALE.get(item_id, 1.0)
     for transform in display.values():
@@ -265,7 +272,7 @@ def write_3d(item_id, tex_dir, model_dir):
         "textures": {"main": f"{NS}:item/{item_id}_3d", "particle": f"{NS}:item/{item_id}"},
         "gui_light": "front",
         "display": display,
-        "elements": SHAPES[shape],
+        "elements": elements,
     })
 
 
