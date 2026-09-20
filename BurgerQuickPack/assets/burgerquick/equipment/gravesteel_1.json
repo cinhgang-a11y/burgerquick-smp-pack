@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "burgerquick:gravesteel_1"
+      }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "burgerquick:gravesteel_1"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "burgerquick:gravesteel_1"
+      }
+    ]
+  }
+}

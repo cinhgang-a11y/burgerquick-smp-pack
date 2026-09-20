@@ -17,6 +17,7 @@ import zipfile
 from PIL import Image
 
 import boss_model
+import gravesteel_model
 import rime_model
 import mace_model
 
@@ -274,6 +275,45 @@ def gravesteel_ore(jar):
     return img
 
 
+# The gravesteel pieces that are modelled in 3D: the hammer and the four plates. Everything else
+# stays a sprite, the same as its vanilla shape.
+GRAVESTEEL_3D = {"gravesteel_mace", "gravesteel_helmet", "gravesteel_chestplate",
+                 "gravesteel_leggings", "gravesteel_boots"}
+
+# Armour is worn, not swung: it wants a steady look-at rather than the hammer's grip transform.
+ARMOUR_DISPLAY = {
+    "thirdperson_righthand": {"rotation": [0, -90, 25], "translation": [0, 3.5, 0.5],
+                              "scale": [0.6, 0.6, 0.6]},
+    "thirdperson_lefthand": {"rotation": [0, 90, -25], "translation": [0, 3.5, 0.5],
+                             "scale": [0.6, 0.6, 0.6]},
+    "firstperson_righthand": {"rotation": [0, -135, 25], "translation": [0, 3, 0],
+                              "scale": [0.55, 0.55, 0.55]},
+    "firstperson_lefthand": {"rotation": [0, 135, -25], "translation": [0, 3, 0],
+                             "scale": [0.55, 0.55, 0.55]},
+    "head": {"rotation": [0, 0, 0], "translation": [0, 13, 0], "scale": [1.05, 1.05, 1.05]},
+}
+
+
+def write_gravesteel_3d(item_id, piece, stage, tex_dir, model_dir):
+    """The held model for one piece at one stage, plus the palette it samples."""
+    if piece == "gravesteel_mace":
+        gravesteel_model.mace_texture(stage).save(os.path.join(tex_dir, item_id + "_3d.png"))
+        elements = gravesteel_model.mace_elements(stage)
+        display = json.loads(json.dumps(HELD_DISPLAY))
+        for slot, lift in GRIP_SHIFT["mace"].items():
+            display[slot]["translation"][1] += lift
+    else:
+        gravesteel_model.texture(stage).save(os.path.join(tex_dir, item_id + "_3d.png"))
+        elements = gravesteel_model.ARMOUR[piece](stage)
+        display = json.loads(json.dumps(ARMOUR_DISPLAY))
+    write(os.path.join(model_dir, item_id + "_3d.json"), {
+        "textures": {"main": f"{NS}:item/{item_id}_3d", "particle": f"{NS}:item/{item_id}"},
+        "gui_light": "front",
+        "display": display,
+        "elements": elements,
+    })
+
+
 def write_gravesteel(jar, tex_dir, model_dir, item_dir):
     for piece, (base, parent) in GRAVESTEEL_PIECES.items():
         with jar.open(f"assets/minecraft/textures/item/{base}.png") as f:
@@ -285,8 +325,39 @@ def write_gravesteel(jar, tex_dir, model_dir, item_dir):
             frosted(metal, stage).save(os.path.join(tex_dir, item_id + ".png"))
             write(os.path.join(model_dir, item_id + ".json"),
                   {"parent": parent, "textures": {"layer0": f"{NS}:item/{item_id}"}})
-            write(os.path.join(item_id and os.path.join(item_dir, item_id + ".json")),
-                  {"model": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}})
+            flat = {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}
+            if piece in GRAVESTEEL_3D:
+                write_gravesteel_3d(item_id, piece, stage, tex_dir, model_dir)
+                definition = {"model": {
+                    "type": "minecraft:select",
+                    "property": "minecraft:display_context",
+                    "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"], "model": flat}],
+                    "fallback": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}_3d"},
+                }}
+            else:
+                definition = {"model": flat}
+            write(os.path.join(item_dir, item_id + ".json"), definition)
+
+
+def write_gravesteel_worn(jar):
+    """The armour as it looks on the body: one equipment asset per frost stage."""
+    humanoid = os.path.join(PACK, "assets", NS, "textures", "entity", "equipment", "humanoid")
+    leggings = os.path.join(PACK, "assets", NS, "textures", "entity", "equipment",
+                            "humanoid_leggings")
+    baby = os.path.join(PACK, "assets", NS, "textures", "entity", "equipment", "humanoid_baby")
+    equipment = os.path.join(PACK, "assets", NS, "equipment")
+    for folder in (humanoid, leggings, baby, equipment):
+        os.makedirs(folder, exist_ok=True)
+    for stage in range(GRAVESTEEL_STAGES):
+        asset = f"gravesteel_{stage}"
+        body = gravesteel_model.worn_layer(jar, stage, 1)
+        body.save(os.path.join(humanoid, asset + ".png"))
+        body.save(os.path.join(baby, asset + ".png"))
+        gravesteel_model.worn_layer(jar, stage, 2).save(os.path.join(leggings, asset + ".png"))
+        write(os.path.join(equipment, asset + ".json"), {"layers": {
+            layer: [{"texture": f"{NS}:{asset}"}]
+            for layer in ("humanoid", "humanoid_baby", "humanoid_leggings")
+        }})
 
 
 def palette_texture(head, accent):
@@ -481,6 +552,7 @@ def main():
     rime_model.iced_stone_bricks(jar).save(os.path.join(vanilla_blocks, "mud_bricks.png"))
     # Packed mud is the other block nothing on the server uses: it carries gravesteel ore.
     gravesteel_ore(jar).save(os.path.join(vanilla_blocks, "packed_mud.png"))
+    write_gravesteel_worn(jar)
 
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {
