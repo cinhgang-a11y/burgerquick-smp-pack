@@ -247,48 +247,45 @@ def head():
 
 
 def wing_right():
-    """A long bone arm carrying a torn, patchy membrane - more bone than wing."""
+    """Right wing: long and slender, grown toward +X from the hinge at the model centre.
+
+    Built like a real wing - shoulder, humerus, elbow, two forearm bones, a wrist with a claw, then
+    finger spars carrying a membrane whose chord shrinks toward the tip. The whole thing is under a
+    unit thick, so it reads as a wing and not a slab.
+    """
     els = [
-        box([8, 7.4, -4], [32, 8.8, 0.5], BONE_LIGHT, BONE, BONE_DARK),                 # arm bone
-        box([8, 7, -3], [18, 9.2, 0.2], SCALE_BLACK, SCALE_BLACK),                      # wasted shoulder muscle
-        box([16.2, 7.3, 0], [17.8, 8.7, 31], BONE_LIGHT, BONE, BONE_DARK),              # finger bones
-        box([24.2, 7.3, 0], [25.8, 8.7, 26], BONE_LIGHT, BONE, BONE_DARK),
-        box([30.7, 7.3, 0], [32, 8.7, 19], BONE_LIGHT, BONE, BONE_DARK),
-        box([29.5, 6, -5], [32, 10, -1.5], CLAW, BONE_LIGHT),                           # wrist claw
+        box([8, 7.1, -2.2], [12, 8.9, 1.4], SCALE_BLACK, SCALE_BLACK),                  # wasted shoulder
+        box([8.5, 7.5, -1.4], [15, 8.5, 0.6], BONE_LIGHT, BONE, BONE_DARK),             # humerus
+        box([14.3, 7.2, -1.8], [16.1, 8.8, 1.1], BONE, BONE_LIGHT),                     # elbow knob
+        box([16, 7.6, -1.7], [23, 8.4, -0.7], BONE_LIGHT, BONE, BONE_DARK),             # radius
+        box([16, 7.6, 0.2], [23, 8.4, 1.2], BONE_LIGHT, BONE, BONE_DARK),               # ulna
+        box([22.4, 7.2, -1.9], [24.1, 8.8, 1.5], BONE, BONE_LIGHT),                     # wrist
+        box([23.4, 7, -3.6], [26, 9, -1.7], CLAW, BONE_LIGHT),                          # wrist claw
+        box([24, 7.6, -1.5], [32, 8.4, -0.5], BONE_LIGHT, BONE, BONE_DARK),             # leading spar
     ]
-    # Membrane in torn strips with gaps, instead of one clean sheet.
-    strips = [(9, 17, 0.5, 12), (9, 17, 14, 22), (9, 17, 24, 31),
-              (17, 25, 0.5, 10), (17, 25, 12, 19), (17, 25, 21, 26),
-              (25, 31.5, 0.5, 9), (25, 31.5, 11, 16), (25, 31.5, 17.5, 19)]
-    for x0, x1, z0, z1 in strips:
-        els.append(box([x0, 7.8, z0], [x1, 8.2, z1], MEMBRANE, MEMBRANE, MEMBRANE_EDGE))
-        els.append(box([x0, 7.75, z1 - 0.6], [x1, 8.25, z1], MEMBRANE_EDGE, MEMBRANE_EDGE))
-    els.append(box([9, 8.2, 3], [30, 8.45, 4.2], GLOW))                                 # glowing veins
-    els.append(box([11, 8.2, 14], [24, 8.4, 15], GLOW))
-    els += spike_along(28.5, -4.6, 8, 3.5, 1.0, "x", 1, CLAW, BONE_LIGHT)
-    for x in (12, 17, 22, 27, 30):                                                      # leading-edge barbs
-        els += spike_along(x, -4, 8, 4.5, 0.85, "z", -1, SPIKE, BONE_LIGHT)
-    return els
-
-
-def tail():
-    """A long whip of bare vertebrae, thinning to a blade."""
-    els = []
-    spans = [(-14, -7, 2.7), (-7, 0, 2.4), (0, 7, 2.15), (7, 13, 1.9), (13, 19, 1.65),
-             (19, 24, 1.45)]
-    for i, (z0, z1, half) in enumerate(spans):
-        els.append(box([8 - half, 8 - half, z0], [8 + half, 8 + half, z1], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK))
-        # A vertebra sticking out at the start of every segment.
-        v = half + 0.7
-        els.append(box([8 - v, 8 - v * 0.7, z0 + 0.2], [8 + v, 8 + v, z0 + 1.5], BONE_LIGHT, BONE, BONE_DARK))
-        top = 8 + v
-        if i % 2:
-            els += spike(8, (z0 + z1) / 2, top - 0.3, 5.5 - i * 0.5, half * 0.45, SPIKE, BONE_LIGHT)
-        else:
-            els += spike(8, (z0 + z1) / 2, top - 0.3, 6 - i * 0.5, half * 0.4, GLOW, GLOW_WHITE)
-        if i % 2 == 0 and i < 6:
-            els += spike_along(8 - half, (z0 + z1) / 2, 8, 4, 0.8, "x", -1, SPIKE, BONE_LIGHT)
-            els += spike_along(8 + half, (z0 + z1) / 2, 8, 4, 0.8, "x", 1, SPIKE, BONE_LIGHT)
+    els += spike_along(25.6, -2.6, 8, 3.2, 0.75, "x", 1, CLAW, BONE_LIGHT)              # claw tip
+    # Membrane: four panels, the chord shrinking toward the tip. Thin - 0.3 of a unit.
+    panels = [(9, 16, 10), (16, 22, 8), (22, 27.5, 6), (27.5, 31.1, 3.8)]
+    for i, (x0, x1, chord) in enumerate(panels):
+        els.append(box([x0, 7.85, 0.6], [x1, 8.15, chord], MEMBRANE, MEMBRANE, MEMBRANE_EDGE))
+        els.append(box([x0, 7.8, chord - 0.6], [x1, 8.2, chord], MEMBRANE_EDGE, MEMBRANE_EDGE))  # rim
+        # Finger spar along the panel's outer edge, with a knuckle where it meets the arm.
+        els.append(box([x1 - 0.45, 7.65, -0.5], [x1 + 0.45, 8.35, chord], BONE_LIGHT, BONE, BONE_DARK))
+        els.append(box([x1 - 0.75, 7.45, -0.3], [x1 + 0.75, 8.55, 1.2], BONE, BONE_LIGHT))       # knuckle
+        # Scalloped, torn trailing edge.
+        steps = 3
+        for k in range(steps):
+            sx = x0 + (x1 - x0) * k / steps
+            ex = sx + (x1 - x0) / steps * 0.62
+            drop = 1.5 - i * 0.25
+            els.append(box([sx, 7.87, chord], [ex, 8.13, chord + drop], MEMBRANE_EDGE, MEMBRANE_EDGE))
+    # Glowing veins running out along the membrane.
+    els.append(box([9, 8.15, 1.6], [30, 8.28, 2.2], GLOW))
+    els.append(box([12, 8.15, 4.4], [26, 8.26, 4.9], GLOW))
+    els.append(box([17, 8.15, 6.6], [23.5, 8.26, 7], GLOW))
+    # Small barbs along the leading edge.
+    for x in (13, 18, 24, 29):
+        els += spike_along(x, -1.8, 8, 2.6, 0.55, "z", -1, SPIKE, BONE_LIGHT)
     return els
 
 
