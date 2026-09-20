@@ -17,6 +17,7 @@ import zipfile
 from PIL import Image
 
 import boss_model
+import rime_model
 import mace_model
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -338,6 +339,22 @@ def main():
         })
         write(os.path.join(item_dir, part + ".json"),
               {"model": {"type": "minecraft:model", "model": f"{NS}:item/{part}"}})
+
+    # Rimevault: the golem's parts, and the iced stone brick that the vault is built from.
+    rime_model.texture().save(os.path.join(tex_dir, "rime.png"))
+    for part in rime_model.PARTS:
+        write(os.path.join(model_dir, part + ".json"), {
+            "textures": {"main": f"{NS}:item/rime", "particle": f"{NS}:item/rime"},
+            "elements": rime_model.PARTS[part](),
+        })
+        write(os.path.join(item_dir, part + ".json"),
+              {"model": {"type": "minecraft:model", "model": f"{NS}:item/{part}"}})
+
+    # A vanilla block texture, swapped on mud bricks: they never generate naturally and nobody
+    # crafts them, so the frozen brick costs us no block players already use.
+    vanilla_blocks = os.path.join(PACK, "assets", "minecraft", "textures", "block")
+    os.makedirs(vanilla_blocks, exist_ok=True)
+    rime_model.iced_stone_bricks().save(os.path.join(vanilla_blocks, "mud_bricks.png"))
 
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {
