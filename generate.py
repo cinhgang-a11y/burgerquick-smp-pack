@@ -53,6 +53,8 @@ RAMPS = {
     "glacier": [(20, 66, 104), (40, 116, 172), (84, 172, 224), (150, 218, 248), (222, 248, 255)],
     "jugger": [(34, 38, 44), (66, 74, 84), (108, 120, 134), (158, 172, 188), (212, 226, 238)],
     "celestial": [(84, 62, 8), (146, 112, 18), (206, 166, 38), (246, 214, 90), (255, 246, 190)],
+    # Gravesteel: what the Hollow leaves behind. Dark steel with bone through it.
+    "gravesteel": [(26, 24, 30), (58, 56, 60), (104, 100, 94), (166, 158, 140), (232, 226, 206)],
 }
 
 # item id -> (vanilla texture, ramp, model parent)
@@ -166,6 +168,125 @@ MODEL_3D = {
     "orbital_strike_cannon": ("cannon", "orbital", "frost"),
     "plasma_railgun": ("railgun", "plasma", "thunder"),
 }
+
+
+
+# Gravesteel gear: the tier above netherite. Every piece exists four times over, because the
+# Rimevault freezes it a stage further with each upgrade.
+GRAVESTEEL_PIECES = {
+    "gravesteel_sword": ("netherite_sword", HANDHELD),
+    "gravesteel_mace": ("mace", MACE),
+    "gravesteel_pickaxe": ("netherite_pickaxe", HANDHELD),
+    "gravesteel_axe": ("netherite_axe", HANDHELD),
+    "gravesteel_shovel": ("netherite_shovel", HANDHELD),
+    "gravesteel_hoe": ("netherite_hoe", HANDHELD),
+    "gravesteel_helmet": ("netherite_helmet", FLAT),
+    "gravesteel_chestplate": ("netherite_chestplate", FLAT),
+    "gravesteel_leggings": ("netherite_leggings", FLAT),
+    "gravesteel_boots": ("netherite_boots", FLAT),
+    "gravesteel_ingot": ("netherite_ingot", FLAT),
+    "raw_gravesteel": ("netherite_scrap", FLAT),
+}
+GRAVESTEEL_STAGES = 4           # 0 = bare metal, 3 = frozen solid
+
+
+def recolour_all(img, ramp):
+    """Like recolour, but without the wood guard - gravesteel has no handle to keep brown."""
+    out = img.copy().convert("RGBA")
+    px = out.load()
+    w, h = out.size
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+            step = min(len(ramp) - 1, max(0, int(lum * len(ramp))))
+            px[x, y] = ramp[step] + (a,)
+    return out
+
+
+def frosted(img, stage):
+    """Blends a gravesteel texture toward ice, and lets frost grow on it as the stage climbs."""
+    if stage <= 0:
+        return img
+    out = img.copy()
+    px = out.load()
+    w, h = out.size
+    rnd = __import__("random").Random(1000 + stage)
+    weight = stage / (GRAVESTEEL_STAGES - 1)            # 0 -> 1 across the stages
+    ice = RAMPS["glacier"]
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a == 0:
+                continue
+            lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+            step = min(len(ice) - 1, max(0, int(lum * len(ice))))
+            ir, ig, ib = ice[step]
+            blend = weight * 0.8
+            px[x, y] = (int(r * (1 - blend) + ir * blend),
+                        int(g * (1 - blend) + ig * blend),
+                        int(b * (1 - blend) + ib * blend), a)
+    # Frost crust: a few pale flecks at stage 1, a rime along the edges by stage 3.
+    flecks = int(6 * weight * 4)
+    for _ in range(flecks):
+        x, y = rnd.randrange(w), rnd.randrange(h)
+        if px[x, y][3] == 0:
+            continue
+        px[x, y] = (232, 250, 255, 255)
+    return out
+
+
+def gravesteel_ore(jar):
+    """Deepslate with gravesteel showing through it.
+
+    The veins are blobs rather than vanilla's scattered dots, and each one is lit on its top-left
+    edge, so the metal reads as a seam running through the rock instead of gravel stuck to it.
+    """
+    with jar.open("assets/minecraft/textures/block/deepslate.png") as f:
+        img = Image.open(f).convert("RGBA").copy()
+    if img.size != (16, 16):                            # animated or hi-res: take the first frame
+        img = img.crop((0, 0, 16, 16))
+    px = img.load()
+    # Darken the host rock a little so the metal has something to stand against.
+    for y in range(16):
+        for x in range(16):
+            r, g, b, a = px[x, y]
+            px[x, y] = (int(r * 0.72), int(g * 0.72), int(b * 0.76), a)
+
+    ramp = RAMPS["gravesteel"]
+    rnd = __import__("random").Random(77)
+    for _ in range(5):
+        cx, cy = rnd.randrange(2, 14), rnd.randrange(2, 14)
+        r = rnd.choice((1, 1, 2))
+        for dy in range(-r, r + 1):
+            for dx in range(-r, r + 1):
+                if dx * dx + dy * dy > r * r + (1 if r > 1 else 0):
+                    continue
+                x, y = (cx + dx) % 16, (cy + dy) % 16
+                lit = dx + dy <= -r                     # top-left face of the blob catches light
+                edge = abs(dx) == r or abs(dy) == r
+                tone = ramp[3] if lit else ramp[1] if edge else ramp[2]
+                px[x, y] = tone + (255,)
+        # A single cold spark in the middle - the same blue the Rimevault will bring out of it.
+        px[cx % 16, cy % 16] = (176, 214, 226, 255)
+    return img
+
+
+def write_gravesteel(jar, tex_dir, model_dir, item_dir):
+    for piece, (base, parent) in GRAVESTEEL_PIECES.items():
+        with jar.open(f"assets/minecraft/textures/item/{base}.png") as f:
+            source = Image.open(f).convert("RGBA").copy()
+        metal = recolour_all(source, RAMPS["gravesteel"])
+        stages = 1 if piece in ("gravesteel_ingot", "raw_gravesteel") else GRAVESTEEL_STAGES
+        for stage in range(stages):
+            item_id = piece if stage == 0 else f"{piece}_{stage}"
+            frosted(metal, stage).save(os.path.join(tex_dir, item_id + ".png"))
+            write(os.path.join(model_dir, item_id + ".json"),
+                  {"parent": parent, "textures": {"layer0": f"{NS}:item/{item_id}"}})
+            write(os.path.join(item_id and os.path.join(item_dir, item_id + ".json")),
+                  {"model": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}})
 
 
 def palette_texture(head, accent):
@@ -340,6 +461,9 @@ def main():
         write(os.path.join(item_dir, part + ".json"),
               {"model": {"type": "minecraft:model", "model": f"{NS}:item/{part}"}})
 
+    # Gravesteel: a full set, and the frost creeping over it one upgrade at a time.
+    write_gravesteel(jar, tex_dir, model_dir, item_dir)
+
     # Rimevault: the golem's parts, and the iced stone brick that the vault is built from.
     rime_model.texture().save(os.path.join(tex_dir, "rime.png"))
     for part in rime_model.PARTS:
@@ -355,6 +479,8 @@ def main():
     vanilla_blocks = os.path.join(PACK, "assets", "minecraft", "textures", "block")
     os.makedirs(vanilla_blocks, exist_ok=True)
     rime_model.iced_stone_bricks(jar).save(os.path.join(vanilla_blocks, "mud_bricks.png"))
+    # Packed mud is the other block nothing on the server uses: it carries gravesteel ore.
+    gravesteel_ore(jar).save(os.path.join(vanilla_blocks, "packed_mud.png"))
 
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {

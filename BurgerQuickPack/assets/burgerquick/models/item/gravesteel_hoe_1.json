@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "burgerquick:item/gravesteel_hoe_1"
+  }
+}
