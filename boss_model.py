@@ -16,7 +16,7 @@ from PIL import Image
 PARTS = ["tyrant_body", "tyrant_neck", "tyrant_head", "tyrant_wing_l", "tyrant_wing_r",
          "tyrant_tail", "tyrant_tail_tip",
          "wyrm_head", "wyrm_segment", "wyrm_tail",
-         "choir_skull", "famine_body", "famine_arm"]
+         "choir_skull", "famine_body", "famine_arm", "brute_body"]
 
 # 32x32 texture of 4x4-pixel colour cells (8 x 8 grid). Cell index -> colour.
 (SCALE_BLACK, SCALE_DARK, SCALE_MID, SCALE_LIGHT, BELLY, MEMBRANE, MEMBRANE_EDGE, GLOW,
@@ -481,6 +481,43 @@ def famine_arm():
     return els
 
 
+
+# ---------------------------------------------------------------- the Bone Brute
+# A hunched slab of bone armour. One model, sized to a 1.5x zombie.
+
+
+def brute_body():
+    els = [
+        box([3, 6, 4], [13, 17, 12], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),        # torso
+        box([2.4, 7, 3.4], [13.6, 15, 12.6], BONE, BONE_LIGHT, BONE_DARK),          # chest plate
+        box([2, 15, 3], [14, 18, 13], BONE_DARK, BONE),                             # shoulder yoke
+        box([5, 17.5, 5], [11, 23, 11], SCALE_BLACK, SCALE_BLACK),                  # head
+        box([4.6, 18, 4.6], [11.4, 22, 8], BONE_LIGHT, BONE, BONE_DARK),            # skull mask
+        box([5.4, 19, 3.8], [10.6, 21, 4.8], SCALE_BLACK, SCALE_BLACK),             # eye slot
+        box([6, 19.4, 3.6], [7, 20.4, 4.2], EYE),
+        box([9, 19.4, 3.6], [10, 20.4, 4.2], EYE),
+    ]
+    for side in (-1, 1):                                                            # horns
+        els += spike_along(8 + side * 4.5, 6, 21.5, 4, 1.0, "x", side, HORN, BONE_LIGHT)
+        # Arms: heavy, hanging low.
+        ax = 8 + side * 6
+        els.append(box([min(ax, ax + side * 2.4), 8, 6], [max(ax, ax + side * 2.4), 17, 11],
+                       SCALE_BLACK, SCALE_BLACK))
+        els.append(box([min(ax, ax + side * 2.8), 13, 5.6], [max(ax, ax + side * 2.8), 16.5, 11.4],
+                       BONE, BONE_LIGHT))
+        els.append(box([min(ax + side * 0.3, ax + side * 2.1), 5, 6.4],
+                       [max(ax + side * 0.3, ax + side * 2.1), 9, 10.6], BONE_LIGHT, BONE))
+        # Legs.
+        lx = 8 + side * 2.6
+        els.append(box([min(lx, lx + side * 2.2), -2, 6.5], [max(lx, lx + side * 2.2), 7, 10.5],
+                       SCALE_BLACK, SCALE_BLACK))
+        els.append(box([min(lx - side * 0.4, lx + side * 2.6), -3.5, 5.5],
+                       [max(lx - side * 0.4, lx + side * 2.6), -1.5, 11.5], BONE, BONE_LIGHT))
+    for z in (5, 8, 11):                                                            # spines on the back
+        els += spike(8, z, 17.5, 4, 1.0, SPIKE, BONE_LIGHT)
+    return els
+
+
 def elements(part):
     return {
         "tyrant_body": body,
@@ -493,6 +530,7 @@ def elements(part):
         "choir_skull": choir_skull,
         "famine_body": famine_body,
         "famine_arm": famine_arm,
+        "brute_body": brute_body,
         "tyrant_wing_r": wing_right,
         "tyrant_wing_l": lambda: mirror_x(wing_right()),
         "tyrant_tail": tail,
