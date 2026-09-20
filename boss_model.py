@@ -15,7 +15,8 @@ from PIL import Image
 
 PARTS = ["tyrant_body", "tyrant_neck", "tyrant_head", "tyrant_wing_l", "tyrant_wing_r",
          "tyrant_tail", "tyrant_tail_tip",
-         "wyrm_head", "wyrm_segment", "wyrm_tail"]
+         "wyrm_head", "wyrm_segment", "wyrm_tail",
+         "choir_skull", "famine_body", "famine_arm"]
 
 # 32x32 texture of 4x4-pixel colour cells (8 x 8 grid). Cell index -> colour.
 (SCALE_BLACK, SCALE_DARK, SCALE_MID, SCALE_LIGHT, BELLY, MEMBRANE, MEMBRANE_EDGE, GLOW,
@@ -406,6 +407,80 @@ def wyrm_tail():
     return els
 
 
+
+# ---------------------------------------------------------------- the Ossuary Choir
+# Floating skulls that sing. Small, so several can hang in the air at once.
+
+
+def choir_skull():
+    els = [
+        box([4, 5, -6], [12, 12, 4], SCALE_BLACK, SCALE_BLACK, SCALE_DARK),         # cranium core
+        box([3.6, 6, -6.4], [12.4, 11.6, 3], BONE_LIGHT, BONE, BONE_DARK),          # bone shell
+        box([4.6, 11.6, -5], [11.4, 12.6, 2], BONE, BONE_LIGHT),                    # crown plate
+        box([5, 3.4, -5.6], [11, 5.4, 1], BONE, BONE_LIGHT, BONE_DARK),             # jaw
+        box([5.2, 5.2, -7.4], [10.8, 9, -6], BONE_LIGHT, BONE),                     # muzzle
+    ]
+    for dx in (-1, 1):                                                              # eye sockets
+        ex = 8 + dx * 2.6
+        els.append(box([min(ex, ex + dx * 1.6), 8, -6.6], [max(ex, ex + dx * 1.6), 10.4, -5.4],
+                       SCALE_BLACK, SCALE_BLACK))
+        els.append(box([min(ex, ex + dx * 0.9), 8.6, -6.8], [max(ex, ex + dx * 0.9), 9.8, -6.2], GLOW))
+    for i in range(5):                                                              # teeth
+        x = 5.4 + i * 1.1
+        els.append(box([x, 4.9, -6], [x + 0.7, 5.9, -5], BONE_LIGHT, BONE))
+    for z in (-3, 0, 3):                                                            # horns down the crown
+        els += spike(8, z, 12.4, 3.4, 0.9, HORN, BONE_LIGHT)
+    return els
+
+
+# ---------------------------------------------------------------- the Famine
+# A starved giant: a ribcage with nothing in it, and arms too long for it.
+
+
+def famine_body():
+    els = [
+        box([6, 2, 6.5], [10, 22, 9.5], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),     # spine
+        box([5.4, 20, 5.6], [10.6, 23, 10.4], BONE, BONE_LIGHT, BONE_DARK),         # collar
+        box([5, -2, 6], [11, 3, 10], SCALE_BLACK, SCALE_BLACK, BELLY),              # pelvis
+        box([4.6, -2.4, 5.6], [11.4, 1, 10.4], BONE, BONE_LIGHT, BONE_DARK),
+    ]
+    # Empty ribcage: ribs arching out from the spine with nothing behind them.
+    for i, y in enumerate(range(5, 20, 3)):
+        reach = 4.2 - abs(i - 2) * 0.5
+        for side in (-1, 1):
+            for s in range(5):
+                t = s / 4
+                dx = side * reach * __import__("math").sin(t * 1.5)
+                dz = -3.4 * __import__("math").sin(t * 2.2)
+                els.append(box([8 + dx - 0.55, y - 0.55 + s * 0.2, 8 + dz - 0.55],
+                               [8 + dx + 0.55, y + 0.55 + s * 0.2, 8 + dz + 0.55],
+                               BONE_LIGHT if s < 4 else BONE, BONE))
+    els.append(box([7.4, 9, 4.6], [8.6, 16, 5.4], GLOW))                            # the hunger in its chest
+    for y in (6, 11, 16):                                                           # spine spikes
+        els += spike(8, 10.5, y, 3, 0.8, SPIKE, BONE_LIGHT)
+    return els
+
+
+def famine_arm():
+    """One long arm, hinged at the shoulder (model centre), hanging down -Y."""
+    els = [
+        box([7, 0, 7], [9, 8, 9], SCALE_BLACK, SCALE_BLACK),                        # upper arm
+        box([6.6, 7, 6.6], [9.4, 9, 9.4], BONE, BONE_LIGHT),                        # shoulder knob
+        box([6.8, -1, 6.8], [9.2, 1, 9.2], BONE, BONE_LIGHT),                       # elbow
+        box([7.2, -10, 7.2], [8.8, 0, 8.8], SCALE_BLACK, SCALE_BLACK),              # forearm
+        box([7.4, -9.6, 7.4], [8.6, -0.4, 8.6], BONE_DARK, BONE),                   # forearm bone
+        box([6.4, -12, 6.4], [9.6, -9.5, 9.6], BONE, BONE_LIGHT),                   # hand
+    ]
+    for dx, dz in ((1, 1), (1, -1), (-1, 1), (-1, -1)):                             # fingers
+        for s in range(3):
+            w = 0.55 - s * 0.12
+            cx = 8 + dx * (1.1 + s * 0.5)
+            cz = 8 + dz * (1.1 + s * 0.5)
+            els.append(box([cx - w, -13.4 - s * 1.1, cz - w], [cx + w, -11.6 - s * 1.1, cz + w],
+                           CLAW, BONE_LIGHT))
+    return els
+
+
 def elements(part):
     return {
         "tyrant_body": body,
@@ -415,6 +490,9 @@ def elements(part):
         "wyrm_head": wyrm_head,
         "wyrm_segment": wyrm_segment,
         "wyrm_tail": wyrm_tail,
+        "choir_skull": choir_skull,
+        "famine_body": famine_body,
+        "famine_arm": famine_arm,
         "tyrant_wing_r": wing_right,
         "tyrant_wing_l": lambda: mirror_x(wing_right()),
         "tyrant_tail": tail,
