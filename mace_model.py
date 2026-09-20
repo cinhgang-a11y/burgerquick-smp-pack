@@ -99,8 +99,8 @@ def elements():
         els.append(box([4.9, y0 - 0.6, z0], [11.1, y1 + 0.6, z1], UV_SIDE, UV_TOP))
     els.append(box([5.2, y0 - 0.4, 4.5], [10.8, y0 + 0.4, 11.5], UV_TOP, UV_TOP))    # underside lip
     # One spike, standing on top of the head.
-    els.append(box([6.8, y1, 6.8], [9.2, y1 + 2.4, 9.2], UV_SPIKE, UV_SPIKE))
-    els.append(box([7.2, y1 + 2.4, 7.2], [8.8, y1 + 5.6, 8.8], UV_SPIKE, UV_SPIKE))
-    els.append(box([7.7, y1 + 5.6, 7.7], [8.3, y1 + 9, 8.3], UV_TIP, UV_TIP))
-    els.append(diamond(8, y1 + 0.7, 8, 1.8, UV_GOLD))                   # collar around the spike foot
+    els.append(box([7.1, y1, 7.1], [8.9, y1 + 1.6, 8.9], UV_SPIKE, UV_SPIKE))
+    els.append(box([7.4, y1 + 1.6, 7.4], [8.6, y1 + 3.4, 8.6], UV_SPIKE, UV_SPIKE))
+    els.append(box([7.75, y1 + 3.4, 7.75], [8.25, y1 + 5.2, 8.25], UV_TIP, UV_TIP))
+    els.append(diamond(8, y1 + 0.5, 8, 1.5, UV_GOLD))                   # collar around the spike foot
     return els

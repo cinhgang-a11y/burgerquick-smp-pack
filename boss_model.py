@@ -13,7 +13,8 @@ import random
 
 from PIL import Image
 
-PARTS = ["tyrant_body", "tyrant_head", "tyrant_wing_l", "tyrant_wing_r", "tyrant_tail"]
+PARTS = ["tyrant_body", "tyrant_neck", "tyrant_head", "tyrant_wing_l", "tyrant_wing_r",
+         "tyrant_tail", "tyrant_tail_tip"]
 
 # 32x32 texture of 4x4-pixel colour cells (8 x 8 grid). Cell index -> colour.
 (SCALE_BLACK, SCALE_DARK, SCALE_MID, SCALE_LIGHT, BELLY, MEMBRANE, MEMBRANE_EDGE, GLOW,
@@ -140,25 +141,69 @@ def body():
             els.append(box([x0, 9.5, z0], [x1, 13.4, z0 + 6], BONE, BONE_LIGHT, BONE_DARK))
             els.append(box([x0 + 0.3, 11, z0 + 1.2], [x1 - 0.3, 12.6, z0 + 4.8], BONE_DARK, BONE))
             els += spike_along(x1 if side > 0 else x0, z0 + 3, 12, 6, 1.1, "x", side, HORN, BONE_LIGHT)
-    # Four long, wasted legs: thin bones with knobbly joints.
-    for x0 in (4.4, 10.2):
-        for z0 in (-11, 15):
-            els.append(box([x0, 3.5, z0], [x0 + 1.4, 8, z0 + 2.2], SCALE_BLACK))                # thigh
-            els.append(box([x0 - 0.3, 7.2, z0 - 0.2], [x0 + 1.7, 8.8, z0 + 2.6], BONE, BONE_LIGHT))  # hip joint
-            els.append(box([x0 - 0.2, 2.8, z0 - 0.1], [x0 + 1.6, 4.2, z0 + 2.4], BONE, BONE_LIGHT))  # knee
-            els.append(box([x0 + 0.2, -4, z0 + 0.3], [x0 + 1.2, 3.4, z0 + 1.9], SCALE_BLACK))   # shin
-            els.append(box([x0 + 0.3, -3.8, z0 + 0.4], [x0 + 1.1, 3, z0 + 1.1], BONE_DARK, BONE))
-            els.append(box([x0 - 0.4, -5.2, z0 - 0.8], [x0 + 1.8, -3.8, z0 + 2.6], SCALE_BLACK, SCALE_BLACK, BONE_DARK))
+    # Four long, heavy legs: thick bones with knobbly joints and big clawed feet.
+    for x0 in (3.6, 9.8):
+        for z0 in (-12, 14):
+            els.append(box([x0, 3, z0], [x0 + 2.6, 8.8, z0 + 3.4], SCALE_BLACK))                    # thigh
+            els.append(box([x0 - 0.4, 7.6, z0 - 0.3], [x0 + 3, 9.8, z0 + 3.7], BONE, BONE_LIGHT))   # hip joint
+            els.append(box([x0 - 0.3, 2.1, z0 - 0.2], [x0 + 2.9, 4.1, z0 + 3.6], BONE, BONE_LIGHT)) # knee
+            els.append(box([x0 + 0.3, -11, z0 + 0.5], [x0 + 2.3, 3, z0 + 2.9], SCALE_BLACK))        # shin
+            els.append(box([x0 + 0.45, -10.6, z0 + 0.65], [x0 + 2.15, 2.4, z0 + 1.75], BONE_DARK, BONE))
+            els.append(box([x0 - 0.5, -12.6, z0 - 1.2], [x0 + 3.1, -10.8, z0 + 4], SCALE_BLACK, SCALE_BLACK, BONE_DARK))
             for c in range(3):
-                cx = x0 - 0.2 + c * 0.8
-                els.append(box([cx, -5.4, z0 - 3.4], [cx + 0.5, -4.4, z0 - 0.6], CLAW, BONE_LIGHT))
+                cx = x0 - 0.3 + c * 1.3
+                els.append(box([cx, -12.8, z0 - 3.4], [cx + 0.9, -11.2, z0 - 0.6], CLAW, BONE_LIGHT))
+    return els
+
+
+def neck():
+    """The neck is its own part so it can be long: hinged at the body end, growing forward (-Z)."""
+    els = []
+    segments = [(15, 9, 2.7), (9, 3, 2.45), (3, -3, 2.2), (-3, -9, 1.95), (-9, -15.5, 1.75)]
+    for i, (z0, z1, half) in enumerate(segments):
+        els.append(box([8 - half, 8 - half, z1], [8 + half, 8 + half, z0], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK))
+        els.append(box([8 - half + 0.3, 8 - half - 0.5, z1 + 0.5], [8 + half - 0.3, 8 - half + 0.4, z0 - 0.5],
+                       BELLY, BELLY, BELLY))                                    # throat
+        v = half + 0.85
+        els.append(box([8 - v, 8 - v * 0.7, z1], [8 + v, 8 + v, z1 + 1.5], BONE_LIGHT, BONE, BONE_DARK))  # vertebra
+        mid = (z0 + z1) / 2
+        if i % 2:
+            els += spike(8, mid, 8 + v - 0.3, 4.5 - i * 0.3, 0.8, SPIKE, BONE_LIGHT)
+        else:
+            els += spike(8, mid, 8 + v - 0.3, 5 - i * 0.3, 0.75, GLOW, GLOW_WHITE)
+        els += spike_along(8 - half, mid, 8, 2.6, 0.6, "x", -1, SPIKE, BONE_LIGHT)
+        els += spike_along(8 + half, mid, 8, 2.6, 0.6, "x", 1, SPIKE, BONE_LIGHT)
+    return els
+
+
+def tail_tip():
+    """Carries on from where tyrant_tail ends, out to the blade."""
+    els = []
+    spans = [(-12, -5, 1.3), (-5, 2, 1.15), (2, 9, 1.0), (9, 15, 0.85), (15, 21, 0.7),
+             (21, 26, 0.58), (26, 30, 0.45)]
+    for i, (z0, z1, half) in enumerate(spans):
+        els.append(box([8 - half, 8 - half, z0], [8 + half, 8 + half, z1], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK))
+        v = half + 0.6
+        els.append(box([8 - v, 8 - v * 0.7, z0 + 0.2], [8 + v, 8 + v, z0 + 1.2], BONE_LIGHT, BONE, BONE_DARK))
+        mid = (z0 + z1) / 2
+        if i % 2:
+            els += spike(8, mid, 8 + v - 0.3, 3.6 - i * 0.3, half * 0.5, SPIKE, BONE_LIGHT)
+        else:
+            els += spike(8, mid, 8 + v - 0.3, 4 - i * 0.3, half * 0.45, GLOW, GLOW_WHITE)
+        if i % 2 == 0:
+            els += spike_along(8 - half, mid, 8, 3, 0.6, "x", -1, SPIKE, BONE_LIGHT)
+            els += spike_along(8 + half, mid, 8, 3, 0.6, "x", 1, SPIKE, BONE_LIGHT)
+    els.append(box([2.5, 7.5, 29], [13.5, 8.5, 32], GLOW, GLOW_WHITE))          # the blade
+    els.append(box([4, 7.7, 30.5], [12, 8.3, 32], GLOW_WHITE, GLOW_WHITE))
+    els += spike_along(2.7, 30.8, 8, 3.5, 1.0, "x", -1, GLOW, GLOW_WHITE)
+    els += spike_along(13.3, 30.8, 8, 3.5, 1.0, "x", 1, GLOW, GLOW_WHITE)
     return els
 
 
 def head():
     """A long starved neck of bare vertebrae and a gaunt skull with sunken cheeks."""
     els = [
-        box([6.8, 6.8, -2], [9.2, 9.6, 24], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),     # thin neck core
+        box([6.6, 6.6, -3], [9.4, 9.8, 5], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),      # skull base, meets the neck
         box([4.2, 5, -14], [11.8, 11.8, -2], SCALE_DARK, SCALE_BLACK, SCALE_DARK),      # skull
         box([3.8, 8.4, -14.6], [12.2, 12.2, -3], BONE_LIGHT, BONE, BONE_DARK),          # bone mask
         box([4.6, 11.8, -12], [11.4, 12.8, -4], BONE, BONE_LIGHT),                      # crest plate
@@ -179,12 +224,8 @@ def head():
         box([5.9, 7.2, -16], [6.8, 8, -15.8], GLOW),                                    # nostrils
         box([9.2, 7.2, -16], [10.1, 8, -15.8], GLOW),
     ]
-    # Bare neck vertebrae all the way down, each with a small spine.
-    for i in range(8):
-        z = -1 + i * 3
-        w = 1.5 - i * 0.05
-        els.append(box([8 - w, 6.6 - w * 0.3, z], [8 + w, 9.8 + w * 0.3, z + 1.4], BONE_LIGHT, BONE, BONE_DARK))
-        els += spike(8, z + 0.7, 9.8 + w * 0.3, 4 - i * 0.25, 0.75, SPIKE, BONE_LIGHT)
+    # The joint where the neck plugs in.
+    els.append(box([6.1, 6.1, 2.5], [9.9, 10.3, 4.5], BONE_LIGHT, BONE, BONE_DARK))
     # Teeth: bared along both jaws, with two long tusks.
     for i in range(5):
         x = 5.4 + i * 1.1
@@ -233,8 +274,8 @@ def wing_right():
 def tail():
     """A long whip of bare vertebrae, thinning to a blade."""
     els = []
-    spans = [(-14, -7, 2.4), (-7, 0, 2.1), (0, 7, 1.85), (7, 13, 1.6), (13, 19, 1.35),
-             (19, 24, 1.1), (24, 28, 0.85), (28, 32, 0.6)]
+    spans = [(-14, -7, 2.7), (-7, 0, 2.4), (0, 7, 2.15), (7, 13, 1.9), (13, 19, 1.65),
+             (19, 24, 1.45)]
     for i, (z0, z1, half) in enumerate(spans):
         els.append(box([8 - half, 8 - half, z0], [8 + half, 8 + half, z1], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK))
         # A vertebra sticking out at the start of every segment.
@@ -248,10 +289,6 @@ def tail():
         if i % 2 == 0 and i < 6:
             els += spike_along(8 - half, (z0 + z1) / 2, 8, 4, 0.8, "x", -1, SPIKE, BONE_LIGHT)
             els += spike_along(8 + half, (z0 + z1) / 2, 8, 4, 0.8, "x", 1, SPIKE, BONE_LIGHT)
-    els.append(box([2.5, 7.5, 28.5], [13.5, 8.5, 32], GLOW, GLOW_WHITE))                # blade
-    els.append(box([4, 7.7, 30], [12, 8.3, 32], GLOW_WHITE, GLOW_WHITE))
-    els += spike_along(2.7, 30.5, 8, 3.5, 1.0, "x", -1, GLOW, GLOW_WHITE)
-    els += spike_along(13.3, 30.5, 8, 3.5, 1.0, "x", 1, GLOW, GLOW_WHITE)
     return els
 
 
@@ -298,7 +335,9 @@ def tail():
 def elements(part):
     return {
         "tyrant_body": body,
+        "tyrant_neck": neck,
         "tyrant_head": head,
+        "tyrant_tail_tip": tail_tip,
         "tyrant_wing_r": wing_right,
         "tyrant_wing_l": lambda: mirror_x(wing_right()),
         "tyrant_tail": tail,
