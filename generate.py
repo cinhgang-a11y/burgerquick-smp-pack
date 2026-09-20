@@ -354,7 +354,7 @@ def main():
     # crafts them, so the frozen brick costs us no block players already use.
     vanilla_blocks = os.path.join(PACK, "assets", "minecraft", "textures", "block")
     os.makedirs(vanilla_blocks, exist_ok=True)
-    rime_model.iced_stone_bricks().save(os.path.join(vanilla_blocks, "mud_bricks.png"))
+    rime_model.iced_stone_bricks(jar).save(os.path.join(vanilla_blocks, "mud_bricks.png"))
 
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {

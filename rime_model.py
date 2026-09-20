@@ -44,49 +44,80 @@ def texture():
     return img
 
 
-def iced_stone_bricks():
-    """A 16x16 block texture: stone brick courses under a sheet of ice, cracked and frosted."""
-    img = Image.new("RGBA", (16, 16))
-    d = ImageDraw.Draw(img)
-    rnd = random.Random(19)
+def iced_stone_bricks(jar=None):
+    """The vanilla cracked stone brick, frozen in from the edges.
 
-    def stone(shade):
-        base = (74 + shade, 84 + shade, 98 + shade)
-        return tuple(max(0, min(255, c + rnd.randint(-6, 6))) for c in base)
+    The middle stays bare stone and the ice creeps in all round the border, heaviest in the corners,
+    so a wall of these reads as stone that the cold has got into rather than a block of ice.
+    """
+    src = None
+    if jar is not None:
+        try:
+            with jar.open("assets/minecraft/textures/block/cracked_stone_bricks.png") as f:
+                src = Image.open(f).convert("RGBA").copy()
+        except KeyError:
+            src = None
+    if src is None:
+        src = _fallback_bricks()
+    img = src.resize((16, 16)).convert("RGBA")
+    px = img.load()
+    rnd = random.Random(23)
 
-    # Brick courses: 4 rows, offset every other row, with mortar between.
+    ICE = (206, 236, 252)
+    DEEP = (140, 190, 224)
+    REACH = 3.2                                         # how far in from the border ice creeps
     for y in range(16):
         for x in range(16):
-            img.putpixel((x, y), stone(0))
+            near = min(x, y, 15 - x, 15 - y)            # 0 on the border
+            if near > REACH + 1:
+                continue                                 # the middle of the face stays bare stone
+            band = max(0.0, 1.0 - near / REACH)
+            frost = band ** 1.3
+            # Corners freeze hardest: both axes are near an edge at once.
+            corner = max(0.0, 1 - min(x, 15 - x) / REACH) * max(0.0, 1 - min(y, 15 - y) / REACH)
+            frost = min(1.0, frost + corner * 0.55)
+            r, g, b, a = px[x, y]
+            # Ice settles into the cracks and mortar, but only where it has already reached.
+            if r + g + b < 250:
+                frost = min(1.0, frost * 1.45)
+            frost *= 0.6 + rnd.random() * 0.4           # ragged, not a clean ring
+            if frost <= 0.05:
+                continue
+            tint = DEEP if frost < 0.5 else ICE
+            px[x, y] = (int(r * (1 - frost) + tint[0] * frost),
+                        int(g * (1 - frost) + tint[1] * frost),
+                        int(b * (1 - frost) + tint[2] * frost), 255)
+    # Crystals growing out of the corners, and a few flecks on the frozen band.
+    for cx, cy in ((0, 0), (15, 0), (0, 15), (15, 15)):
+        for i in range(3):
+            dx = (1 if cx == 0 else -1) * rnd.randint(0, 2)
+            dy = (1 if cy == 0 else -1) * rnd.randint(0, 2)
+            x, y = cx + dx, cy + dy
+            if 0 <= x < 16 and 0 <= y < 16:
+                px[x, y] = (238, 250, 255, 255)
+    for _ in range(10):
+        x, y = rnd.randrange(16), rnd.randrange(16)
+        if min(x, y, 15 - x, 15 - y) <= 2:
+            px[x, y] = (228, 246, 255, 255)
+    return img
+
+
+def _fallback_bricks():
+    """Used if the client jar is not to hand: a plain stone brick course."""
+    img = Image.new("RGBA", (16, 16), (122, 122, 122, 255))
+    d = ImageDraw.Draw(img)
+    rnd = random.Random(7)
+    for y in range(16):
+        for x in range(16):
+            shade = rnd.randint(-10, 10)
+            img.putpixel((x, y), (122 + shade, 122 + shade, 122 + shade, 255))
     for row in range(4):
         y0 = row * 4
+        d.line((0, y0, 15, y0), fill=(92, 92, 92))
         offset = 0 if row % 2 == 0 else 4
-        d.line((0, y0, 15, y0), fill=(46, 54, 66))                  # mortar course
         for seam in range(2):
             x = (offset + seam * 8) % 16
-            d.line((x, y0, x, y0 + 3), fill=(46, 54, 66))           # vertical seam
-        for y in range(y0 + 1, y0 + 4):
-            for x in range(16):
-                if rnd.random() < 0.18:
-                    img.putpixel((x, y), stone(rnd.choice((-14, 12))))
-    # The ice on top: a pale translucent wash, thicker toward the bottom, with facets.
-    for y in range(16):
-        for x in range(16):
-            r, g, b = img.getpixel((x, y))[:3]
-            depth = 0.22 + 0.3 * (y / 15)
-            ice = (120, 186, 226)
-            img.putpixel((x, y), (int(r * (1 - depth) + ice[0] * depth),
-                                  int(g * (1 - depth) + ice[1] * depth),
-                                  int(b * (1 - depth) + ice[2] * depth), 255))
-    for _ in range(9):                                              # frost flecks and facet lines
-        x, y = rnd.randrange(16), rnd.randrange(16)
-        img.putpixel((x, y), (228, 246, 255, 255))
-    for _ in range(3):
-        x, y = rnd.randrange(12), rnd.randrange(12)
-        length = rnd.randint(3, 6)
-        for i in range(length):
-            if x + i < 16 and y + i < 16:
-                img.putpixel((x + i, y + i), (206, 236, 252, 255))
+            d.line((x, y0, x, y0 + 3), fill=(92, 92, 92))
     return img
 
 
