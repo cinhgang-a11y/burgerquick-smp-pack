@@ -16,7 +16,8 @@ from PIL import Image
 PARTS = ["tyrant_body", "tyrant_neck", "tyrant_head", "tyrant_wing_l", "tyrant_wing_r",
          "tyrant_tail", "tyrant_tail_tip",
          "wyrm_head", "wyrm_segment", "wyrm_tail",
-         "choir_skull", "famine_body", "famine_arm", "brute_body"]
+         "choir_skull", "famine_body", "famine_arm",
+         "brute_torso", "brute_leg", "brute_arm"]
 
 # 32x32 texture of 4x4-pixel colour cells (8 x 8 grid). Cell index -> colour.
 (SCALE_BLACK, SCALE_DARK, SCALE_MID, SCALE_LIGHT, BELLY, MEMBRANE, MEMBRANE_EDGE, GLOW,
@@ -511,37 +512,50 @@ def famine_arm():
     return els
 
 
-def brute_body():
+def brute_torso():
+    """Torso, shoulders and head, hinged at the hips. Shoulders sit 14 above the hinge."""
     els = [
-        box([3, 6, 4], [13, 17, 12], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),        # torso
-        box([2.4, 7, 3.4], [13.6, 15, 12.6], BONE, BONE_LIGHT, BONE_DARK),          # chest plate
-        box([2, 15, 3], [14, 18, 13], BONE_DARK, BONE),                             # shoulder yoke
-        box([5, 17.5, 5], [11, 23, 11], SCALE_BLACK, SCALE_BLACK),                  # head
-        box([4.6, 18, 4.6], [11.4, 22, 8], BONE_LIGHT, BONE, BONE_DARK),            # skull mask
-        box([5.4, 19, 3.8], [10.6, 21, 4.8], SCALE_BLACK, SCALE_BLACK),             # eye slot
-        box([6, 19.4, 3.6], [7, 20.4, 4.2], EYE),
-        box([9, 19.4, 3.6], [10, 20.4, 4.2], EYE),
+        box([4, 8, 5], [12, 22, 11], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),        # ribs and gut
+        box([3.4, 9, 4.4], [12.6, 20, 11.6], BONE, BONE_LIGHT, BONE_DARK),          # chest plate
+        box([3, 20, 4], [13, 23, 12], BONE_DARK, BONE),                             # shoulder yoke
+        box([5.5, 23, 6], [10.5, 29, 10.5], SCALE_BLACK, SCALE_BLACK),              # head
+        box([5, 23.5, 5.4], [11, 28.5, 8], BONE_LIGHT, BONE, BONE_DARK),            # skull mask
+        box([5.8, 25, 4.8], [10.2, 27, 5.6], SCALE_BLACK, SCALE_BLACK),             # eye slot
+        box([6.3, 25.4, 4.6], [7.3, 26.4, 5.2], EYE),
+        box([8.7, 25.4, 4.6], [9.7, 26.4, 5.2], EYE),
+        box([6.2, 21, 4.6], [9.8, 23, 6], BONE, BONE_LIGHT),                        # collar
     ]
     for side in (-1, 1):                                                            # horns
-        els += spike_along(8 + side * 4.5, 6, 21.5, 4, 1.0, "x", side, HORN, BONE_LIGHT)
-        # Arms: heavy, hanging low.
-        ax = 8 + side * 6
-        els.append(box([min(ax, ax + side * 2.4), 8, 6], [max(ax, ax + side * 2.4), 17, 11],
-                       SCALE_BLACK, SCALE_BLACK))
-        els.append(box([min(ax, ax + side * 2.8), 13, 5.6], [max(ax, ax + side * 2.8), 16.5, 11.4],
-                       BONE, BONE_LIGHT))
-        els.append(box([min(ax + side * 0.3, ax + side * 2.1), 5, 6.4],
-                       [max(ax + side * 0.3, ax + side * 2.1), 9, 10.6], BONE_LIGHT, BONE))
-        # Legs.
-        lx = 8 + side * 2.6
-        els.append(box([min(lx, lx + side * 2.2), -2, 6.5], [max(lx, lx + side * 2.2), 7, 10.5],
-                       SCALE_BLACK, SCALE_BLACK))
-        els.append(box([min(lx - side * 0.4, lx + side * 2.6), -3.5, 5.5],
-                       [max(lx - side * 0.4, lx + side * 2.6), -1.5, 11.5], BONE, BONE_LIGHT))
-    for z in (5, 8, 11):                                                            # spines on the back
-        els += spike(8, z, 17.5, 4, 1.0, SPIKE, BONE_LIGHT)
+        els += spike_along(8 + side * 3, 6.5, 28, 3.5, 0.9, "x", side, HORN, BONE_LIGHT)
+    for y in (11, 15, 19):                                                          # back spines
+        els += spike(8, 10.6, y, 3, 0.8, SPIKE, BONE_LIGHT)
     return els
 
+
+def brute_leg():
+    """One leg, hinged at the hip: 14 down to the sole."""
+    return [
+        box([6.4, 6.4, 6.4], [9.6, 9.4, 9.6], BONE, BONE_LIGHT),                    # hip joint
+        box([6.6, 0, 6.6], [9.4, 7, 9.4], SCALE_BLACK, SCALE_BLACK),                # thigh
+        box([6.8, 0.4, 6.8], [9.2, 6.6, 9.2], BONE_DARK, BONE),
+        box([6.4, -2, 6.4], [9.6, 0.5, 9.6], BONE, BONE_LIGHT),                     # knee
+        box([6.8, -6.5, 6.8], [9.2, -1.5, 9.2], SCALE_BLACK, SCALE_BLACK),          # shin
+        box([6.2, -8, 5.4], [9.8, -6, 10.4], BONE, BONE_LIGHT, BONE_DARK),          # foot
+        box([6.6, -8.2, 3.8], [9.4, -6.6, 5.6], CLAW, BONE_LIGHT),                  # toes
+    ]
+
+
+def brute_arm():
+    """One arm, hinged at the shoulder: heavy, ends in a fist of bone."""
+    return [
+        box([6.2, 6.2, 6.2], [9.8, 9.8, 9.8], BONE, BONE_LIGHT),                    # shoulder
+        box([6.6, -1, 6.6], [9.4, 7, 9.4], SCALE_BLACK, SCALE_BLACK),               # upper arm
+        box([6.8, -0.6, 6.8], [9.2, 6.6, 9.2], BONE_DARK, BONE),
+        box([6.4, -3, 6.4], [9.6, -0.5, 9.6], BONE, BONE_LIGHT),                    # elbow
+        box([6.8, -8, 6.8], [9.2, -2.5, 9.2], SCALE_BLACK, SCALE_BLACK),            # forearm
+        box([5.8, -11, 5.8], [10.2, -7.5, 10.2], BONE, BONE_LIGHT),                 # fist
+        box([6.4, -12, 6.4], [9.6, -10.5, 9.6], CLAW, BONE_LIGHT),                  # knuckles
+    ]
 
 def elements(part):
     return {
@@ -555,7 +569,9 @@ def elements(part):
         "choir_skull": choir_skull,
         "famine_body": famine_body,
         "famine_arm": famine_arm,
-        "brute_body": brute_body,
+        "brute_torso": brute_torso,
+        "brute_leg": brute_leg,
+        "brute_arm": brute_arm,
         "tyrant_wing_r": wing_right,
         "tyrant_wing_l": lambda: mirror_x(wing_right()),
         "tyrant_tail": tail,
