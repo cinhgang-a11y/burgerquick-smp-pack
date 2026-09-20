@@ -14,7 +14,8 @@ import random
 from PIL import Image
 
 PARTS = ["tyrant_body", "tyrant_neck", "tyrant_head", "tyrant_wing_l", "tyrant_wing_r",
-         "tyrant_tail", "tyrant_tail_tip"]
+         "tyrant_tail", "tyrant_tail_tip",
+         "wyrm_head", "wyrm_segment", "wyrm_tail"]
 
 # 32x32 texture of 4x4-pixel colour cells (8 x 8 grid). Cell index -> colour.
 (SCALE_BLACK, SCALE_DARK, SCALE_MID, SCALE_LIGHT, BELLY, MEMBRANE, MEMBRANE_EDGE, GLOW,
@@ -329,12 +330,91 @@ def tail():
     return els
 
 
+
+# ---------------------------------------------------------------- the Gravebound Wyrm
+# A burrowing thing: an armoured ring of a head with mandibles, a body of repeated segments, and a
+# tail that ends in a stinger. Shares the tyrant texture - same bones, same crystal.
+
+
+def wyrm_head():
+    """Blunt armoured skull, hinged at the model centre, facing -Z like everything else."""
+    els = [
+        box([3, 3, -4], [13, 13, 8], SCALE_DARK, SCALE_BLACK, BELLY),               # skull
+        box([2.4, 4, -2], [13.6, 12, 6], BONE, BONE_LIGHT, BONE_DARK),              # armour band
+        box([4, 4, -8], [12, 12, -4], SCALE_BLACK, SCALE_BLACK),                    # snout ring
+    ]
+    # The maw: a glowing ring of teeth you can see down.
+    for i in range(12):
+        a = 2 * 3.14159 * i / 12
+        cx = 8 + 3.4 * __import__("math").cos(a)
+        cy = 8 + 3.4 * __import__("math").sin(a)
+        els.append(box([cx - 0.7, cy - 0.7, -9.4], [cx + 0.7, cy + 0.7, -7.4], BONE_LIGHT, BONE))
+    els.append(box([5.6, 5.6, -8.6], [10.4, 10.4, -7.8], GLOW, GLOW_WHITE))         # gullet
+    # Four mandibles spreading off the snout.
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        bx, by = 8 + dx * 5, 8 + dy * 5
+        for s in range(4):
+            w = 1.6 - s * 0.3
+            els.append(box([bx - w + dx * s * 0.6, by - w + dy * s * 0.6, -9 - s * 1.8],
+                           [bx + w + dx * s * 0.9, by + w + dy * s * 0.9, -7.4 - s * 1.8],
+                           HORN if s < 3 else BONE_LIGHT, BONE_LIGHT))
+    # Eyes set back in the armour.
+    for dx in (-1, 1):
+        ex = 8 + dx * 4.6
+        els.append(box([min(ex, ex + dx * 0.6), 9.5, -3], [max(ex, ex + dx * 0.6), 11, -0.5], EYE))
+    # Plates and spikes over the top.
+    for z in (-2, 2, 6):
+        els += spike(8, z, 13, 3.5, 1.0, SPIKE, BONE_LIGHT)
+        els.append(box([4, 12.6, z - 1], [12, 13.6, z + 1], BONE_DARK, BONE))
+    return els
+
+
+def wyrm_segment():
+    """One body ring: armour plates around a softer core, with barbs. Repeated down the body."""
+    els = [
+        box([4, 4, -5], [12, 12, 5], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),        # core
+        box([3.2, 3.2, -3.5], [12.8, 12.8, 3.5], SCALE_MID, SCALE_DARK, BELLY),     # muscle
+        box([2.6, 4.6, -2.5], [13.4, 11.4, 2.5], BONE, BONE_LIGHT, BONE_DARK),      # armour ring
+        box([4.6, 2.6, -2.5], [11.4, 13.4, 2.5], BONE, BONE_LIGHT, BONE_DARK),
+    ]
+    # Barbs at the four corners of the ring, angled outward.
+    for dx, dy in ((1, 1), (1, -1), (-1, 1), (-1, -1)):
+        for s in range(3):
+            w = 1.3 - s * 0.35
+            els.append(box([8 + dx * (4.5 + s * 1.4) - w, 8 + dy * (4.5 + s * 1.4) - w, -1 - w],
+                           [8 + dx * (4.5 + s * 1.4) + w, 8 + dy * (4.5 + s * 1.4) + w, 1 + w],
+                           SPIKE if s < 2 else BONE_LIGHT, BONE_LIGHT))
+    els.append(box([7, 7, -5.2], [9, 9, -4.8], GLOW))                               # light between rings
+    return els
+
+
+def wyrm_tail():
+    """Tapers away to a stinger."""
+    els = []
+    spans = [(-6, 0, 3.6), (0, 6, 2.9), (6, 12, 2.2), (12, 18, 1.6), (18, 23, 1.1)]
+    for i, (z0, z1, half) in enumerate(spans):
+        els.append(box([8 - half, 8 - half, z0], [8 + half, 8 + half, z1], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK))
+        els.append(box([8 - half - 0.5, 8 - half + 0.6, z0 + 0.3], [8 + half + 0.5, 8 + half - 0.6, z0 + 1.6],
+                       BONE, BONE_LIGHT, BONE_DARK))
+        if i % 2 == 0:
+            els += spike(8, (z0 + z1) / 2, 8 + half, 3 - i * 0.4, half * 0.4, SPIKE, BONE_LIGHT)
+    # The stinger.
+    for s in range(4):
+        w = 1.0 - s * 0.22
+        els.append(box([8 - w, 8 - w, 23 + s * 2], [8 + w, 8 + w, 25 + s * 2],
+                       GLOW if s % 2 == 0 else HORN, GLOW_WHITE))
+    return els
+
+
 def elements(part):
     return {
         "tyrant_body": body,
         "tyrant_neck": neck,
         "tyrant_head": head,
         "tyrant_tail_tip": tail_tip,
+        "wyrm_head": wyrm_head,
+        "wyrm_segment": wyrm_segment,
+        "wyrm_tail": wyrm_tail,
         "tyrant_wing_r": wing_right,
         "tyrant_wing_l": lambda: mirror_x(wing_right()),
         "tyrant_tail": tail,
