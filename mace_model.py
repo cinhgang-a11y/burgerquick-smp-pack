@@ -91,12 +91,13 @@ def elements():
     els.append(box([7.4, -2, 7.4], [8.6, 10.5, 8.6], UV_ROD, UV_ROD_END))
     els.append(diamond(8, -3, 8, 2.4, UV_GOLD))                         # pommel
     els.append(box([7, 9.5, 7], [9, 10.5, 9], UV_ROD_END))              # collar
-    # Hammer head: a broad block with a striking face on each side (-x and +x).
+    # Hammer head: a broad block with a striking face on each side (-z and +z), so in the hand one
+    # face looks back at you and the other points away.
     y0, y1 = 10.5, 16.5
-    els.append(box([3.5, y0, 5.5], [12.5, y1, 10.5], UV_TOP, UV_TOP))   # body of the head
-    for x0, x1 in ((2.5, 3.5), (12.5, 13.5)):                           # flared striking faces
-        els.append(box([x0, y0 - 0.6, 4.9], [x1, y1 + 0.6, 11.1], UV_SIDE, UV_TOP))
-    els.append(box([4.5, y0 - 0.4, 5.2], [11.5, y0 + 0.4, 10.8], UV_TOP, UV_TOP))    # underside lip
+    els.append(box([5.5, y0, 3.5], [10.5, y1, 12.5], UV_TOP, UV_TOP))   # body of the head
+    for z0, z1 in ((2.5, 3.5), (12.5, 13.5)):                           # flared striking faces
+        els.append(box([4.9, y0 - 0.6, z0], [11.1, y1 + 0.6, z1], UV_SIDE, UV_TOP))
+    els.append(box([5.2, y0 - 0.4, 4.5], [10.8, y0 + 0.4, 11.5], UV_TOP, UV_TOP))    # underside lip
     # One spike, standing on top of the head.
     els.append(box([6.8, y1, 6.8], [9.2, y1 + 2.4, 9.2], UV_SPIKE, UV_SPIKE))
     els.append(box([7.2, y1 + 2.4, 7.2], [8.8, y1 + 5.6, 8.8], UV_SPIKE, UV_SPIKE))
