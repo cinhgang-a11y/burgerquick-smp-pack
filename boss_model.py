@@ -413,77 +413,102 @@ def wyrm_tail():
 
 
 def choir_skull():
+    """A skull that floats and sings. Hinge at the model centre; it faces -Z like everything else."""
     els = [
-        box([4, 5, -6], [12, 12, 4], SCALE_BLACK, SCALE_BLACK, SCALE_DARK),         # cranium core
-        box([3.6, 6, -6.4], [12.4, 11.6, 3], BONE_LIGHT, BONE, BONE_DARK),          # bone shell
-        box([4.6, 11.6, -5], [11.4, 12.6, 2], BONE, BONE_LIGHT),                    # crown plate
-        box([5, 3.4, -5.6], [11, 5.4, 1], BONE, BONE_LIGHT, BONE_DARK),             # jaw
-        box([5.2, 5.2, -7.4], [10.8, 9, -6], BONE_LIGHT, BONE),                     # muzzle
+        box([4, 5.5, -5], [12, 13, 5], SCALE_BLACK, SCALE_BLACK, SCALE_DARK),       # cranium core
+        box([3.5, 6, -5.6], [12.5, 12.6, 4.6], BONE_LIGHT, BONE, BONE_DARK),        # bone shell
+        box([4.4, 12.4, -4.6], [11.6, 13.6, 3.6], BONE, BONE_LIGHT),                # crown
+        box([4.8, 5, -6.4], [11.2, 9.8, -5], BONE_LIGHT, BONE),                     # muzzle
+        box([5.2, 4.9, -7.2], [10.8, 8.6, -6.2], BONE, BONE_LIGHT),
+        box([4.6, 3.2, -6.8], [11.4, 5.2, 3], SCALE_BLACK, BONE_DARK, SCALE_BLACK), # jaw
+        box([4.8, 3.6, -6.6], [11.2, 5, 1], BONE_LIGHT, BONE),                      # jaw bone
+        box([3.2, 9.6, -5.2], [4.4, 12, 1], BONE, BONE_LIGHT),                      # cheek arches
+        box([11.6, 9.6, -5.2], [12.8, 12, 1], BONE, BONE_LIGHT),
     ]
-    for dx in (-1, 1):                                                              # eye sockets
-        ex = 8 + dx * 2.6
-        els.append(box([min(ex, ex + dx * 1.6), 8, -6.6], [max(ex, ex + dx * 1.6), 10.4, -5.4],
+    # Sunken sockets with the light still in them.
+    for dx in (-1, 1):
+        ex = 8 + dx * 2
+        els.append(box([min(ex, ex + dx * 2.2), 8.2, -6.2], [max(ex, ex + dx * 2.2), 11.2, -4.4],
                        SCALE_BLACK, SCALE_BLACK))
-        els.append(box([min(ex, ex + dx * 0.9), 8.6, -6.8], [max(ex, ex + dx * 0.9), 9.8, -6.2], GLOW))
-    for i in range(5):                                                              # teeth
-        x = 5.4 + i * 1.1
-        els.append(box([x, 4.9, -6], [x + 0.7, 5.9, -5], BONE_LIGHT, BONE))
-    for z in (-3, 0, 3):                                                            # horns down the crown
-        els += spike(8, z, 12.4, 3.4, 0.9, HORN, BONE_LIGHT)
+        els.append(box([min(ex + dx * 0.4, ex + dx * 1.6), 8.8, -6.4],
+                       [max(ex + dx * 0.4, ex + dx * 1.6), 10.4, -5.6], GLOW))
+    for i in range(6):                                                              # teeth
+        x = 5 + i * 1.05
+        els.append(box([x, 5, -6.4], [x + 0.65, 6.4, -5.4], BONE_LIGHT, BONE))      # upper
+        els.append(box([x, 3.6, -6.2], [x + 0.6, 4.9, -5.2], BONE, BONE_LIGHT))     # lower
+    for z in (-3, 0.5, 4):                                                          # crown horns
+        els += spike(8, z, 13.4, 4 - abs(z) * 0.2, 0.9, HORN, BONE_LIGHT)
+    for side in (-1, 1):                                                            # side horns sweeping back
+        els += spike_along(8 + side * 5.5, 0, 11, 5, 1.0, "x", side, HORN, BONE_LIGHT)
     return els
 
 
-# ---------------------------------------------------------------- the Famine
-# A starved giant: a ribcage with nothing in it, and arms too long for it.
-
-
 def famine_body():
+    """A starved giant, hinged at the hips: legs reach down 22, shoulders sit 20 above."""
+    math = __import__("math")
     els = [
-        box([6, 2, 6.5], [10, 22, 9.5], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK),     # spine
-        box([5.4, 20, 5.6], [10.6, 23, 10.4], BONE, BONE_LIGHT, BONE_DARK),         # collar
-        box([5, -2, 6], [11, 3, 10], SCALE_BLACK, SCALE_BLACK, BELLY),              # pelvis
-        box([4.6, -2.4, 5.6], [11.4, 1, 10.4], BONE, BONE_LIGHT, BONE_DARK),
+        box([5, 6, 5.5], [11, 11, 10.5], SCALE_BLACK, SCALE_BLACK, BELLY),          # pelvis
+        box([4.4, 5.6, 5], [11.6, 9, 11], BONE, BONE_LIGHT, BONE_DARK),             # hip bone
+        box([6.5, 10, 6.5], [9.5, 28, 9.5], SCALE_BLACK, SCALE_BLACK, SCALE_BLACK), # spine
+        box([2.5, 25.5, 5.5], [13.5, 28.5, 10.5], BONE, BONE_LIGHT, BONE_DARK),     # shoulder yoke
+        box([3.5, 24, 6], [12.5, 26, 10], BONE_DARK, BONE),
+        box([7.3, 14, 4.6], [8.7, 22, 5.4], GLOW),                                  # the hunger in it
     ]
-    # Empty ribcage: ribs arching out from the spine with nothing behind them.
-    for i, y in enumerate(range(5, 20, 3)):
-        reach = 4.2 - abs(i - 2) * 0.5
+    # Ribcage: dense arcs off the spine, so they actually join it.
+    for i, y in enumerate(range(12, 25, 3)):
+        reach = 4.6 - abs(i - 2) * 0.45
         for side in (-1, 1):
-            for s in range(5):
-                t = s / 4
-                dx = side * reach * __import__("math").sin(t * 1.5)
-                dz = -3.4 * __import__("math").sin(t * 2.2)
-                els.append(box([8 + dx - 0.55, y - 0.55 + s * 0.2, 8 + dz - 0.55],
-                               [8 + dx + 0.55, y + 0.55 + s * 0.2, 8 + dz + 0.55],
-                               BONE_LIGHT if s < 4 else BONE, BONE))
-    els.append(box([7.4, 9, 4.6], [8.6, 16, 5.4], GLOW))                            # the hunger in its chest
-    for y in (6, 11, 16):                                                           # spine spikes
-        els += spike(8, 10.5, y, 3, 0.8, SPIKE, BONE_LIGHT)
+            steps = 12
+            for st in range(steps + 1):
+                t = st / steps
+                dx = side * reach * math.sin(t * 1.9)
+                dz = -3.6 * math.sin(t * 2.4)
+                dy = y + math.sin(t * 1.2) * 1.6
+                els.append(box([8 + dx - 0.5, dy - 0.5, 8 + dz - 0.5],
+                               [8 + dx + 0.5, dy + 0.5, 8 + dz + 0.5],
+                               BONE_LIGHT if st < steps - 2 else BONE, BONE))
+        els.append(box([7.2, y - 0.6, 7.2], [8.8, y + 0.6, 8.8], BONE, BONE_LIGHT))  # vertebra
+    # Legs down to the ground, with knees and long feet.
+    for side in (-1, 1):
+        lx = 8 + side * 2.4
+        els.append(box([min(lx, lx + side * 2), -4, 6.5], [max(lx, lx + side * 2), 7, 9.5],
+                       SCALE_BLACK, SCALE_BLACK))                                    # thigh
+        els.append(box([min(lx - side * 0.4, lx + side * 2.4), -5.5, 6],
+                       [max(lx - side * 0.4, lx + side * 2.4), -3.5, 10], BONE, BONE_LIGHT))  # knee
+        els.append(box([min(lx + side * 0.2, lx + side * 1.8), -13.5, 7],
+                       [max(lx + side * 0.2, lx + side * 1.8), -4.5, 9], SCALE_BLACK, SCALE_BLACK))
+        els.append(box([min(lx + side * 0.35, lx + side * 1.65), -13.1, 7.2],
+                       [max(lx + side * 0.35, lx + side * 1.65), -5, 8.2], BONE_DARK, BONE))  # shin bone
+        els.append(box([min(lx - side * 0.6, lx + side * 2.6), -15.5, 5.5],
+                       [max(lx - side * 0.6, lx + side * 2.6), -13, 11.5], BONE, BONE_LIGHT))  # foot
+        for toe in range(3):
+            tx = lx - side * 0.4 + side * toe * 1.1
+            els.append(box([min(tx, tx + side * 0.8), -15.7, 3.6],
+                           [max(tx, tx + side * 0.8), -14.1, 5.8], CLAW, BONE_LIGHT))
+    for y in (14, 19, 24):                                                          # spine spikes
+        els += spike(8, 10.2, y, 3, 0.8, SPIKE, BONE_LIGHT)
     return els
 
 
 def famine_arm():
-    """One long arm, hinged at the shoulder (model centre), hanging down -Y."""
+    """One arm, hinged at the shoulder: hangs 22 down, ending in a grabbing hand."""
     els = [
-        box([7, 0, 7], [9, 8, 9], SCALE_BLACK, SCALE_BLACK),                        # upper arm
-        box([6.6, 7, 6.6], [9.4, 9, 9.4], BONE, BONE_LIGHT),                        # shoulder knob
-        box([6.8, -1, 6.8], [9.2, 1, 9.2], BONE, BONE_LIGHT),                       # elbow
-        box([7.2, -10, 7.2], [8.8, 0, 8.8], SCALE_BLACK, SCALE_BLACK),              # forearm
-        box([7.4, -9.6, 7.4], [8.6, -0.4, 8.6], BONE_DARK, BONE),                   # forearm bone
-        box([6.4, -12, 6.4], [9.6, -9.5, 9.6], BONE, BONE_LIGHT),                   # hand
+        box([6.6, 6.6, 6.6], [9.4, 9.4, 9.4], BONE, BONE_LIGHT),                    # shoulder ball
+        box([7, -3, 7], [9, 8, 9], SCALE_BLACK, SCALE_BLACK),                       # upper arm
+        box([7.2, -2.6, 7.2], [8.8, 7, 8.8], BONE_DARK, BONE),
+        box([6.6, -5, 6.6], [9.4, -2.5, 9.4], BONE, BONE_LIGHT),                    # elbow
+        box([7.2, -13, 7.2], [8.8, -4.5, 8.8], SCALE_BLACK, SCALE_BLACK),           # forearm
+        box([7.4, -12.6, 7.4], [8.6, -5, 8.6], BONE_DARK, BONE),
+        box([6.2, -15.5, 6.2], [9.8, -12.5, 9.8], BONE, BONE_LIGHT),                # hand
     ]
     for dx, dz in ((1, 1), (1, -1), (-1, 1), (-1, -1)):                             # fingers
-        for s in range(3):
-            w = 0.55 - s * 0.12
-            cx = 8 + dx * (1.1 + s * 0.5)
-            cz = 8 + dz * (1.1 + s * 0.5)
-            els.append(box([cx - w, -13.4 - s * 1.1, cz - w], [cx + w, -11.6 - s * 1.1, cz + w],
+        for st in range(3):
+            w = 0.5 - st * 0.1
+            cx = 8 + dx * (1.2 + st * 0.55)
+            cz = 8 + dz * (1.2 + st * 0.55)
+            els.append(box([cx - w, -15.9, cz - w], [cx + w, -14.2 + st * 0.4, cz + w],
                            CLAW, BONE_LIGHT))
     return els
-
-
-
-# ---------------------------------------------------------------- the Bone Brute
-# A hunched slab of bone armour. One model, sized to a 1.5x zombie.
 
 
 def brute_body():

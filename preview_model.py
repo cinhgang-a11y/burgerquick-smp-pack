@@ -38,8 +38,11 @@ def face_corners(f, t, face):
 SHADE = {"up": 1.0, "down": 0.5, "north": 0.8, "south": 0.8, "east": 0.6, "west": 0.6}
 
 
+CAMERA_Y = 8      # height the camera looks at, in model units
+
+
 def camera(p, yaw, pitch):
-    x, y, z = p[0] - 8, p[1] - 8, p[2] - 8
+    x, y, z = p[0] - 8, p[1] - CAMERA_Y, p[2] - 8
     a = math.radians(yaw)
     x, z = x * math.cos(a) - z * math.sin(a), x * math.sin(a) + z * math.cos(a)
     b = math.radians(-pitch)
@@ -105,8 +108,10 @@ def render_view(model, texture, yaw, pitch, size):
     return canvas
 
 
-def main(model_path, texture_path, out_path, scale=None, size=560):
-    global SCALE
+def main(model_path, texture_path, out_path, scale=None, size=560, camera_y=None):
+    global SCALE, CAMERA_Y
+    if camera_y:
+        CAMERA_Y = float(camera_y)
     if scale:
         SCALE = float(scale)
     model = json.load(open(model_path, encoding="utf-8"))
@@ -121,4 +126,4 @@ def main(model_path, texture_path, out_path, scale=None, size=560):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:6])
+    main(*sys.argv[1:7])
