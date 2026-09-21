@@ -76,6 +76,8 @@ ITEMS = {
     "explosive_bow": ("bow", "boom", FLAT),
     "storm_bow": ("bow", "storm", FLAT),
     "grappling_hook": ("fishing_rod", "nature", HANDHELD),
+    "orbital_nuke": ("fishing_rod", "boom", "minecraft:item/handheld_rod"),
+    "orbital_stab": ("fishing_rod", "orbital", "minecraft:item/handheld_rod"),
     "healing_wand": ("blaze_rod", "heal", HANDHELD),
     "void_pearl": ("ender_pearl", "void", FLAT),
     "grenade": ("fire_charge", "nature", FLAT),
@@ -483,8 +485,19 @@ def write_3d(item_id, tex_dir, model_dir):
     })
 
 
+# Fishing rods: recoloured whole, with a cast state like the vanilla rod.
+RODS = {"orbital_nuke", "orbital_stab"}
+
+
 def item_definition(item_id):
     flat = {"type": "minecraft:model", "model": f"{NS}:item/{item_id}"}
+    if item_id in RODS:
+        return {"model": {
+            "type": "minecraft:condition",
+            "property": "minecraft:fishing_rod/cast",
+            "on_true": {"type": "minecraft:model", "model": f"{NS}:item/{item_id}_cast"},
+            "on_false": flat,
+        }}
     if item_id not in MODEL_3D:
         return {"model": flat}
     return {"model": {
@@ -506,13 +519,19 @@ def main():
     for d in (tex_dir, model_dir, item_dir):
         os.makedirs(d, exist_ok=True)
 
-    sheet = Image.new("RGBA", (16 * 7, 16 * 6), (30, 30, 34, 255))
+    sheet = Image.new("RGBA", (16 * 7, 16 * ((len(ITEMS) + 6) // 7)), (30, 30, 34, 255))
     for i, (item_id, (base, ramp, parent)) in enumerate(ITEMS.items()):
         with jar.open(f"assets/minecraft/textures/item/{base}.png") as f:
             src = Image.open(f).convert("RGBA")
         src = src.crop((0, 0, 16, 16))  # ignore animation strips
-        img = recolour(src, RAMPS[ramp])
+        img = recolour_all(src, RAMPS[ramp]) if item_id in RODS else recolour(src, RAMPS[ramp])
         img.save(os.path.join(tex_dir, item_id + ".png"))
+        if item_id in RODS:
+            with jar.open("assets/minecraft/textures/item/fishing_rod_cast.png") as f:
+                cast = Image.open(f).convert("RGBA").crop((0, 0, 16, 16))
+            recolour_all(cast, RAMPS[ramp]).save(os.path.join(tex_dir, item_id + "_cast.png"))
+            write(os.path.join(model_dir, item_id + "_cast.json"),
+                  {"parent": parent, "textures": {"layer0": f"{NS}:item/{item_id}_cast"}})
         sheet.paste(img, ((i % 7) * 16, (i // 7) * 16), img)
 
         model = {"parent": parent, "textures": {"layer0": f"{NS}:item/{item_id}"}}
@@ -585,7 +604,7 @@ def main():
             for f in files:
                 full = os.path.join(root, f)
                 z.write(full, os.path.relpath(full, PACK))
-    sheet.resize((16 * 7 * 6, 16 * 6 * 6), Image.NEAREST).save(os.path.join(HERE, "preview.png"))
+    sheet.resize((sheet.width * 6, sheet.height * 6), Image.NEAREST).save(os.path.join(HERE, "preview.png"))
     print(f"{len(ITEMS)} textures -> {zip_path} ({os.path.getsize(zip_path)} bytes)")
 
 
