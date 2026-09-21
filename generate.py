@@ -18,6 +18,7 @@ from PIL import Image
 
 import boss_model
 import gravesteel_model
+import miniboss_model
 import rime_model
 import mace_model
 
@@ -534,6 +535,18 @@ def main():
 
     # Gravesteel: a full set, and the frost creeping over it one upgrade at a time.
     write_gravesteel(jar, tex_dir, model_dir, item_dir)
+
+    # The two mini-bosses: one palette each, then their limb sets.
+    miniboss_model.texture(miniboss_model.WATCHER, 21).save(os.path.join(tex_dir, "watcher.png"))
+    miniboss_model.texture(miniboss_model.COLOSSUS, 22).save(os.path.join(tex_dir, "colossus.png"))
+    for part, build in miniboss_model.PARTS.items():
+        palette = "watcher" if part.startswith("watcher") else "colossus"
+        write(os.path.join(model_dir, part + ".json"), {
+            "textures": {"main": f"{NS}:item/{palette}", "particle": f"{NS}:item/{palette}"},
+            "elements": build(),
+        })
+        write(os.path.join(item_dir, part + ".json"),
+              {"model": {"type": "minecraft:model", "model": f"{NS}:item/{part}"}})
 
     # Rimevault: the golem's parts, and the iced stone brick that the vault is built from.
     rime_model.texture().save(os.path.join(tex_dir, "rime.png"))
