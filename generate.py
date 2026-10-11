@@ -590,14 +590,16 @@ def main():
 
     # Zombie Waves guns: a 3D model in the hand, a side-view icon in the inventory, and a
     # Pack-a-Punch twin of each. The plugin puts burgerquick:zw_<gun>[_pap] on a hoe.
-    gun_sheet = Image.new("RGBA", (32 * len(gun_model.GUNS), 64), (30, 30, 34, 255))
+    cols = 11
+    rows = (len(gun_model.GUNS) + cols - 1) // cols
+    gun_sheet = Image.new("RGBA", (34 * cols, 34 * rows * 2 + 6), (30, 30, 34, 255))
     for gi, gun in enumerate(gun_model.GUNS):
         for pap in (False, True):
             gid = "zw_" + gun + ("_pap" if pap else "")
             gun_model.texture(gun, pap).save(os.path.join(tex_dir, gid + "_3d.png"))
             ic = gun_model.icon(gun, pap)
             ic.save(os.path.join(tex_dir, gid + ".png"))
-            gun_sheet.paste(ic, (gi * 32, 32 if pap else 0), ic)
+            gun_sheet.paste(ic, ((gi % cols) * 34 + 1, (gi // cols) * 34 + 1 + (34 * rows + 6 if pap else 0)), ic)
             write(os.path.join(model_dir, gid + ".json"),
                   {"parent": "minecraft:item/generated", "textures": {"layer0": f"{NS}:item/{gid}"}})
             write(os.path.join(model_dir, gid + "_3d.json"), {
@@ -612,7 +614,7 @@ def main():
                 "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"], "model": {"type": "minecraft:model", "model": f"{NS}:item/{gid}"}}],
                 "fallback": {"type": "minecraft:model", "model": f"{NS}:item/{gid}_3d"},
             }})
-    gun_sheet.resize((gun_sheet.width * 4, gun_sheet.height * 4), Image.NEAREST).save(os.path.join(HERE, "guns_preview.png"))
+    gun_sheet.resize((gun_sheet.width * 2, gun_sheet.height * 2), Image.NEAREST).save(os.path.join(HERE, "guns_preview.png"))
 
     # A vanilla block texture, swapped on mud bricks: they never generate naturally and nobody
     # crafts them, so the frozen brick costs us no block players already use.
