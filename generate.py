@@ -594,8 +594,8 @@ def main():
     rows = (len(gun_model.GUNS) + cols - 1) // cols
     gun_sheet = Image.new("RGBA", (34 * cols, 34 * rows * 2 + 6), (30, 30, 34, 255))
     for gi, gun in enumerate(gun_model.GUNS):
-        for pap in (False, True):
-            gid = "zw_" + gun + ("_pap" if pap else "")
+        for pap in ((False, True) if gun.startswith("zw_") else (False,)):
+            gid = gun + ("_pap" if pap else "")
             gun_model.texture(gun, pap).save(os.path.join(tex_dir, gid + "_3d.png"))
             ic = gun_model.icon(gun, pap)
             ic.save(os.path.join(tex_dir, gid + ".png"))

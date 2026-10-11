@@ -23,8 +23,17 @@ SLOTS = ["metal_d", "metal_m", "metal_l", "black",
          "acc_d", "acc_m", "acc_l", "glow",
          "lens", "brass", "white", "red"]
 
+ROYALE_JSON = os.path.join(os.path.dirname(HERE), "burger-royale-plugin", "src", "main", "resources", "weapons.json")
+
+# Model id -> spec. Zombies guns are "zw_<id>" (plus a Pack-a-Punch twin), Burger Royale weapons "fn_<id>".
+SPECS = {}
 with open(GUNS_JSON, encoding="utf-8") as f:
-    SPECS = {g["id"]: g for g in json.load(f)["guns"]}
+    for g in json.load(f)["guns"]:
+        SPECS["zw_" + g["id"]] = g
+if os.path.exists(ROYALE_JSON):
+    with open(ROYALE_JSON, encoding="utf-8") as f:
+        for g in json.load(f)["weapons"]:
+            SPECS["fn_" + g["id"]] = g
 GUNS = list(SPECS)
 
 
