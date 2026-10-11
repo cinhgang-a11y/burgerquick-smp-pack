@@ -57,6 +57,12 @@ RAMPS = {
     "jugger": [(34, 38, 44), (66, 74, 84), (108, 120, 134), (158, 172, 188), (212, 226, 238)],
     "celestial": [(84, 62, 8), (146, 112, 18), (206, 166, 38), (246, 214, 90), (255, 246, 190)],
     # Gravesteel: what the Hollow leaves behind. Dark steel with bone through it.
+    "pick_default": [(30, 44, 70), (52, 74, 112), (84, 112, 160), (128, 160, 206), (196, 220, 246)],
+    "pick_raider": [(70, 10, 10), (140, 24, 20), (200, 50, 30), (236, 170, 40), (255, 230, 120)],
+    "pick_acdc": [(20, 30, 90), (40, 70, 200), (90, 160, 255), (250, 220, 60), (255, 250, 200)],
+    "pick_reaper": [(10, 10, 12), (26, 26, 30), (44, 44, 50), (80, 80, 90), (160, 160, 170)],
+    "pick_candy": [(120, 10, 20), (220, 30, 40), (240, 240, 240), (230, 40, 50), (255, 255, 255)],
+    "pick_squeak": [(150, 90, 0), (230, 160, 0), (250, 210, 40), (240, 60, 40), (255, 240, 160)],
     "gravesteel": [(26, 24, 30), (58, 56, 60), (104, 100, 94), (166, 158, 140), (232, 226, 206)],
 }
 
@@ -68,6 +74,13 @@ FLAT = "minecraft:item/generated"
 # Items rendered bigger in hand / on the ground (1.0 = vanilla size).
 SCALE = {"earthquake_mace": 1.3, "worldbreaker": 1.3}
 ITEMS = {
+    # Burger Royale pickaxe skins (recoloured vanilla tools, held like normal tools).
+    "fn_pick_default": ("iron_pickaxe", "pick_default", HANDHELD),
+    "fn_pick_raiders_revenge": ("golden_pickaxe", "pick_raider", HANDHELD),
+    "fn_pick_ac_dc": ("diamond_pickaxe", "pick_acdc", HANDHELD),
+    "fn_pick_reaper": ("netherite_hoe", "pick_reaper", HANDHELD),
+    "fn_pick_candy_axe": ("iron_axe", "pick_candy", HANDHELD),
+    "fn_pick_pick_squeak": ("mace", "pick_squeak", HANDHELD),
     "thunder_hammer": ("netherite_axe", "thunder", HANDHELD),
     "frost_blade": ("diamond_sword", "frost", HANDHELD),
     "inferno_staff": ("blaze_rod", "inferno", HANDHELD),
