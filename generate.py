@@ -21,6 +21,7 @@ import gravesteel_model
 import miniboss_model
 import rime_model
 import mace_model
+import gun_model
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PACK = os.path.join(HERE, "BurgerQuickPack")
@@ -453,6 +454,16 @@ HELD_DISPLAY = {
 }
 
 
+# Guns: held like the cannon (muzzle forward), a touch smaller in first person.
+GUN_DISPLAY = {
+    "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, -1, 1], "scale": [0.9, 0.9, 0.9]},
+    "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, -1, 1], "scale": [0.9, 0.9, 0.9]},
+    "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [1, 1, 0], "scale": [0.8, 0.8, 0.8]},
+    "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [-1, 1, 0], "scale": [0.8, 0.8, 0.8]},
+    "head": {"rotation": [0, 90, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]},
+}
+
+
 # How far (in 1/16 block) to raise each shape in the hand.
 GRIP_SHIFT = {
     "mace": {"thirdperson_righthand": 6, "thirdperson_lefthand": 6,
@@ -576,6 +587,32 @@ def main():
         })
         write(os.path.join(item_dir, part + ".json"),
               {"model": {"type": "minecraft:model", "model": f"{NS}:item/{part}"}})
+
+    # Zombie Waves guns: a 3D model in the hand, a side-view icon in the inventory, and a
+    # Pack-a-Punch twin of each. The plugin puts burgerquick:zw_<gun>[_pap] on a hoe.
+    gun_sheet = Image.new("RGBA", (32 * len(gun_model.GUNS), 64), (30, 30, 34, 255))
+    for gi, gun in enumerate(gun_model.GUNS):
+        for pap in (False, True):
+            gid = "zw_" + gun + ("_pap" if pap else "")
+            gun_model.texture(gun, pap).save(os.path.join(tex_dir, gid + "_3d.png"))
+            ic = gun_model.icon(gun, pap)
+            ic.save(os.path.join(tex_dir, gid + ".png"))
+            gun_sheet.paste(ic, (gi * 32, 32 if pap else 0), ic)
+            write(os.path.join(model_dir, gid + ".json"),
+                  {"parent": "minecraft:item/generated", "textures": {"layer0": f"{NS}:item/{gid}"}})
+            write(os.path.join(model_dir, gid + "_3d.json"), {
+                "textures": {"main": f"{NS}:item/{gid}_3d", "particle": f"{NS}:item/{gid}"},
+                "gui_light": "front",
+                "display": GUN_DISPLAY,
+                "elements": gun_model.elements(gun),
+            })
+            write(os.path.join(item_dir, gid + ".json"), {"model": {
+                "type": "minecraft:select",
+                "property": "minecraft:display_context",
+                "cases": [{"when": ["gui", "ground", "fixed", "on_shelf"], "model": {"type": "minecraft:model", "model": f"{NS}:item/{gid}"}}],
+                "fallback": {"type": "minecraft:model", "model": f"{NS}:item/{gid}_3d"},
+            }})
+    gun_sheet.resize((gun_sheet.width * 4, gun_sheet.height * 4), Image.NEAREST).save(os.path.join(HERE, "guns_preview.png"))
 
     # A vanilla block texture, swapped on mud bricks: they never generate naturally and nobody
     # crafts them, so the frozen brick costs us no block players already use.
