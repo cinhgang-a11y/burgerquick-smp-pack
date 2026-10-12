@@ -33,7 +33,8 @@ with open(GUNS_JSON, encoding="utf-8") as f:
 if os.path.exists(ROYALE_JSON):
     with open(ROYALE_JSON, encoding="utf-8") as f:
         for g in json.load(f)["weapons"]:
-            SPECS["fn_" + g["id"]] = g
+            if "model" in g:   # enchant-style weapons are plain vanilla items
+                SPECS["fn_" + g["id"]] = g
 GUNS = list(SPECS)
 
 

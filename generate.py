@@ -638,6 +638,10 @@ def main():
     gravesteel_ore(jar).save(os.path.join(vanilla_blocks, "packed_mud.png"))
     write_gravesteel_worn(jar)
 
+    # Burger Royale icons: heals, shields, grenade, trap, launch pad, ammo, build tools.
+    import royale_items
+    royale_items.write_java(os.path.join(PACK, "assets", "burgerquick"))
+
     write(os.path.join(PACK, "pack.mcmeta"), {
         "pack": {
             "description": "BurgerQuick SMP - custom item textures",
